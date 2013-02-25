@@ -1,0 +1,19 @@
+
+*.class
+
+# Package Files #
+*.jar
+*.war
+*.ear
+
+# Backup file
+*.*~
+
+.settings/
+dist/
+target/
+.classpath
+.project
+
+bash.exe.stackdump
+
