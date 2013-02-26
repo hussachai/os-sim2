@@ -3,6 +3,7 @@ package hussachai.osu.os2.system.unit;
 import static hussachai.osu.os2.system.unit.Bit.I;
 import static hussachai.osu.os2.system.unit.Bit.O;
 import hussachai.osu.os2.system.error.LogicException;
+import hussachai.osu.os2.system.unit.Bit;
 
 import java.util.Arrays;
 

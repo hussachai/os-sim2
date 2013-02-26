@@ -1,4 +1,4 @@
-package hussachai.osu.os2.system;
+package hussachai.osu.os2.system.storage;
 
 public class MemoryManager {
 

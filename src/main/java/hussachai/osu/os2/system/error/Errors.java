@@ -15,4 +15,8 @@ public final class Errors {
 
 	public static final int RANGE_OUT_OF_BOUND = 203;
 	
+	/* User errors */
+	
+	public static final int INVALID_OP_CODE = 301;
+	
 }

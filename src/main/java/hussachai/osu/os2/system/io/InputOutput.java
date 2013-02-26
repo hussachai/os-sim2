@@ -1,7 +1,5 @@
-package hussachai.osu.os2.system;
+package hussachai.osu.os2.system.io;
 
-import hussachai.osu.os2.system.io.Keyboard;
-import hussachai.osu.os2.system.io.Screen;
 
 public class InputOutput {
 	

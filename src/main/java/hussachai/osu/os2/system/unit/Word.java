@@ -21,6 +21,8 @@ public class Word {
 	 */
 	public static final int SIZE = 12;
 	
+	public static final int NIBBLE_SIZE = 6;
+	
 	private Bit bits[];
 	
 	/**

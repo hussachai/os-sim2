@@ -1,5 +1,10 @@
 package hussachai.osu.os2.system;
 
+import hussachai.osu.os2.system.cpu.CPU;
+import hussachai.osu.os2.system.error.ErrorHandler;
+import hussachai.osu.os2.system.storage.Memory;
+import hussachai.osu.os2.system.storage.MemoryManager;
+
 import org.apache.commons.lang3.StringUtils;
 
 

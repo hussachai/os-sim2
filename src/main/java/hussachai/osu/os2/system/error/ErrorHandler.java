@@ -1,6 +1,5 @@
-package hussachai.osu.os2.system;
+package hussachai.osu.os2.system.error;
 
-import hussachai.osu.os2.system.error.LogicException;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;

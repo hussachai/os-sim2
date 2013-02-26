@@ -1,4 +1,4 @@
-package hussachai.osu.os2.system;
+package hussachai.osu.os2.system.storage;
 
 import hussachai.osu.os2.system.unit.Bit;
 import hussachai.osu.os2.system.unit.Word;
