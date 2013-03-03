@@ -1,5 +1,10 @@
 package hussachai.osu.os2.system.storage;
 
+import hussachai.osu.os2.system.TheSystem;
+import hussachai.osu.os2.system.error.Errors;
+import hussachai.osu.os2.system.error.LogicException;
+import hussachai.osu.os2.system.error.SystemException;
+import hussachai.osu.os2.system.io.InputOutput;
 import hussachai.osu.os2.system.unit.Bit;
 import hussachai.osu.os2.system.unit.Word;
 
@@ -10,12 +15,17 @@ import java.math.BigInteger;
 import org.apache.commons.lang3.StringUtils;
 
 /**
+ * Memory manager
  * 
  * @author hussachai
  *
  */
 public class Memory {
 
+	public static enum Signal {
+		READ, WRIT, DUMP
+	}
+	
 	/**
 	 * the addresses store 4096 words = 2^12
 	 * 
@@ -24,11 +34,11 @@ public class Memory {
 	
 	private Word addresses[] = new Word[SIZE];
 	
-	public static enum Signal {
-		READ, WRIT, DUMP
-	}
+	private InputOutput io;
 	
-	public Memory(){
+	public Memory(TheSystem system){
+		this.io = system.getIO();
+		
 		for(int i=0; i<SIZE;i++){
 			addresses[i] = new Word();
 		}
@@ -36,19 +46,38 @@ public class Memory {
 	
 	/**
 	 * 
+	 * [Specification required method]
+	 * 
 	 * @param signal
-	 * @param ea - memory address (EA)
+	 * @param memoryAddr (EA)
+	 * @param variable - may be a register used by the CPU or may be a buffer used by the LOADER
+	 */
+	public void memory(Signal signal, Word memoryAddr, Word variable){
+		int memoryIdx = Bit.toDecimal(memoryAddr.getBits());
+		memory(signal, memoryIdx, variable);
+	}
+	
+	/**
+	 * 
+	 * @param signal
+	 * @param memoryIdx
 	 * @param variable
 	 */
-	public void memory(Signal signal, Word ea, Word variable){
-		if(Signal.READ == signal){
-			int index = Bit.toDecimal(ea.getBits());
-			if(index>=SIZE){
-				//TODO: error
+	public void memory(Signal signal, int memoryIdx, Word variable){
+		
+		if(signal == Signal.READ || signal == Signal.WRIT){
+			if(variable==null){
+				throw new LogicException("Variable cannot be null");
 			}
-			System.arraycopy(addresses[index].getBits(), 0, 
-					variable.getBits(), 0, Word.SIZE);
+		}
+		
+		if(Signal.READ == signal){
+			
+			Word.copy(getCell(memoryIdx), variable);
+			
 		}else if(Signal.WRIT == signal){
+			
+			Word.copy(variable, getCell(memoryIdx));
 			
 		}else{
 			/* dump the first xxx words*/
@@ -70,18 +99,28 @@ public class Memory {
 					bw.append("\t");
 				}
 			}catch(Exception e){
-				
+				throw new SystemException(Errors.MEM_DUMP_FAILED);
 			}finally{
 				if(bw!=null){
 					try{ bw.close(); }catch(Exception e){}
 				}
 			}
-			System.out.println(writer.toString());
+			io.getLog().info("DUMP Memory [0-255]:");
+			io.getLog().info(writer.toString());
 		}
 	}
 	
-	public static void main(String[] args) {
-		Memory m = new Memory();
-		m.memory(Signal.DUMP, null, null);
+	public Word getCell(Word memoryAddr){
+		int memoryIdx = Bit.toDecimal(memoryAddr.getBits());
+		return getCell(memoryIdx);
 	}
+	
+	public Word getCell(int memoryIdx){
+		if(memoryIdx>=SIZE){
+			throw new SystemException(Errors.MEM_RANGE_OUT_OF_BOUND);
+		}
+		return addresses[memoryIdx];
+	}
+	
+	
 }

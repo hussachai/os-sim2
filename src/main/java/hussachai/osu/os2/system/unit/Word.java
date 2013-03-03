@@ -57,6 +57,33 @@ public class Word {
 		return getBits()[0]==Bit.I?true:false;
 	}
 	
+	public Bit[] getBits(){
+		return bits;
+	}
+	
+	@Override
+	public String toString(){
+		return Bit.toBinString(bits);
+	}
+	
+	/**
+	 * zero-base index number slicing 
+	 * @param firstIdx
+	 * @param lastIdx
+	 * @return
+	 */
+	public Bit[] slice(int firstIdx, int lastIdx){
+		if( (firstIdx<0 || firstIdx>Word.SIZE-1)
+			|| (lastIdx<0 || lastIdx>Word.SIZE-1) || (firstIdx>lastIdx) ){
+			throw new LogicException("Invalid range: ("+firstIdx+","+lastIdx+")");
+		}
+		Bit slice[] = new Bit[(lastIdx-firstIdx)+1];
+		for(int i=firstIdx, j=0; i<=lastIdx;i++,j++){
+			slice[j] = this.bits[i];
+		}
+		return slice;
+	}
+	
 	/**
 	 * 
 	 * @param binStr
@@ -88,6 +115,15 @@ public class Word {
 	}
 	
 	/**
+	 * @param src
+	 * @param dest
+	 */
+	public static void copy(Word src, Word dest){
+		/* Use native copy which is much more faster than using loop */
+		System.arraycopy(src.getBits(), 0, dest.getBits(), 0, Word.SIZE);
+	}
+	
+	/**
 	 * 
 	 * @param bits
 	 * @return
@@ -105,15 +141,6 @@ public class Word {
 			wordList.add(new Word(subBits));
 		}
 		return wordList.toArray(new Word[0]);
-	}
-	
-	public Bit[] getBits(){
-		return bits;
-	}
-	
-	@Override
-	public String toString(){
-		return Bit.toBinString(bits);
 	}
 	
 }

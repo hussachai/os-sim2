@@ -10,8 +10,12 @@ import java.io.InputStreamReader;
  */
 public class Keyboard {
 
-	
-	public String getKeys(){
+	/**
+	 * Collect the data from keyboard until new line character found.
+	 * The collection of character without new line character form a string.
+	 * @return
+	 */
+	public String readLine(){
 		BufferedReader reader = new BufferedReader(
 				new InputStreamReader(System.in));
 		String data = null;
@@ -19,8 +23,7 @@ public class Keyboard {
 			data = reader.readLine();
 			return data;
 		}catch(Exception e){
-			//TODO: error
-			return null;
+			throw new RuntimeException(e);
 		}
 	}
 	

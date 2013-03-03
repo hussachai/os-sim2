@@ -76,14 +76,14 @@ public enum Bit {
 	 * @param size
 	 * @return
 	 */
-	public static Bit[] leftPad(Bit[] bits, int size){
+	public static Bit[] leftPad(Bit[] bits, int size, Bit padBit){
 		if(bits.length>=size){
 			return bits;
 		}
 		Bit newValues[] = new Bit[size];
 		int dataOffset = size-bits.length;
 		for(int i=0;i<dataOffset;i++){
-			newValues[i] = Bit.O;
+			newValues[i] = padBit;
 		}
 		for(int i=dataOffset, j=0;i<size;i++,j++){
 			newValues[i] = bits[j];
@@ -104,7 +104,7 @@ public enum Bit {
 		for(int i=0; i<binStr.length();i++){
 			bits[i] = toBit(binStr.charAt(i));
 		}
-		return leftPad(bits, size);
+		return leftPad(bits, size, Bit.O);
 	}
 	
 	/**

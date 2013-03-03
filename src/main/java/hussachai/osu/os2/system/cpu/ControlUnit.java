@@ -2,7 +2,8 @@ package hussachai.osu.os2.system.cpu;
 
 import hussachai.osu.os2.system.error.Errors;
 import hussachai.osu.os2.system.error.LogicException;
-import hussachai.osu.os2.system.error.SystemError;
+import hussachai.osu.os2.system.error.SystemException;
+import hussachai.osu.os2.system.storage.Memory;
 import hussachai.osu.os2.system.unit.Bit;
 import hussachai.osu.os2.system.unit.Word;
 
@@ -15,16 +16,26 @@ public class ControlUnit {
 	
 	private CPU cpu;
 	
+	private Memory memory;
+	
 	public ControlUnit(CPU cpu){
 		this.cpu = cpu;
+		this.memory = cpu.memory;
 	}
 	
-	public Word fetch(){
+	/**
+	 * Fetch instruction from memory to MBR (Memory Buffer Register)
+	 * Then CPU will read data from MBR to IR
+	 * @return
+	 */
+	public void fetch(){
 		
 		Word pc = cpu.registers[CPU.R_PC];
-		int address = Bit.toDecimal(pc.getBits());
 		
-		return null;
+		memory.memory(Memory.Signal.READ, pc, cpu.mbr);
+		
+		Word.copy(cpu.mbr, cpu.registers[CPU.R_IR]);
+		
 	}
 	
 	/**
@@ -32,7 +43,9 @@ public class ControlUnit {
 	 * @param instruction
 	 * @return
 	 */
-	public OpCode decode(Word instruction){
+	public OpCode decode(){
+		
+		Word instruction = cpu.registers[CPU.R_IR];
 		
 		Bit bits[] = instruction.getBits();
 		if(bits[1]==Bit.O && bits[2]==Bit.O && bits[3]==Bit.O){
@@ -52,7 +65,7 @@ public class ControlUnit {
 			int totalBits = bits[5].ordinal()+bits[6].ordinal()
 					+bits[7].ordinal();
 			if(totalBits>1 || totalBits==0){
-				throw new SystemError(Errors.INVALID_OP_CODE);
+				throw new SystemException(Errors.PROG_INVALID_OP);
 			}
 			if(bits[5]==Bit.I){
 				return OpCode.RD;
@@ -63,7 +76,13 @@ public class ControlUnit {
 		}else if(bits[1]==Bit.I && bits[2]==Bit.I && bits[3]==Bit.I){
 			if(bits[0]==Bit.O){
 				/* Type III => 111*/
-				
+				if(bits[5]==Bit.I) return OpCode.CLR;
+				if(bits[6]==Bit.I) return OpCode.INC;
+				if(bits[7]==Bit.I) return OpCode.COM;
+				if(bits[8]==Bit.I) return OpCode.BSW;
+				if(bits[9]==Bit.I) return OpCode.RTL;
+				if(bits[10]==Bit.I) return OpCode.RTR;
+				//bits[11] not exist in specification
 			}else{
 				/* Type IV */
 				int equal = bits[5].ordinal();

@@ -2,6 +2,9 @@ package hussachai.osu.os2.system.unit;
 
 import static hussachai.osu.os2.system.unit.Bit.I;
 import static hussachai.osu.os2.system.unit.Bit.O;
+
+import java.util.Arrays;
+
 import hussachai.osu.os2.system.error.LogicException;
 import hussachai.osu.os2.system.unit.Bit;
 import hussachai.osu.os2.system.unit.Word;
@@ -167,6 +170,31 @@ public class WordTest {
 		try{
 			Word.fromHexString(" ");
 			Assert.fail("Unchecked input error");
+		}catch(LogicException e){}
+	}
+	
+	@Test
+	public void testSlice(){
+		
+		Word word = Word.fromBinString("100011100011");
+		
+		Assert.assertTrue(Arrays.equals(word.getBits(), word.slice(0, 11)));
+		Assert.assertTrue(Arrays.equals(Bit.fromBinString("111", 3), word.slice(4, 6)));
+		Assert.assertTrue(Arrays.equals(new Bit[]{Bit.I}, word.slice(0, 0)));
+		
+		try{
+			word.slice(-1, 0);
+			Assert.fail("Invalid range check failed");
+		}catch(LogicException e){}
+		
+		try{
+			word.slice(3, 2);
+			Assert.fail("Invalid range check failed");
+		}catch(LogicException e){}
+		
+		try{
+			word.slice(1, 12);
+			Assert.fail("Invalid range check failed");
 		}catch(LogicException e){}
 	}
 }

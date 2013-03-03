@@ -1,6 +1,9 @@
 package hussachai.osu.os2.system.error;
 
 
+import hussachai.osu.os2.system.TheSystem;
+import hussachai.osu.os2.system.io.InputOutput;
+
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -15,7 +18,12 @@ public class ErrorHandler {
 	
 	private Properties errors = new Properties();
 	
-	public ErrorHandler(){
+	private InputOutput io;
+	
+	public ErrorHandler(TheSystem system){
+		
+		this.io = system.getIO();
+		
 		InputStream in = null;
 		try{
 			in = ErrorHandler.class.getResourceAsStream("/errors.properties");
@@ -30,12 +38,14 @@ public class ErrorHandler {
 		}
 	}
 	
-	public void handleError(int errorNumber){
-		
+	/**
+	 * Specification required method.
+	 * @param errorNumber
+	 */
+	public void errorHandler(int errorNumber){
+		String message = errors.getProperty(String.valueOf(errorNumber));
+		io.getLog().info("Terminated with error no. "+errorNumber);
+		io.getLog().info("Description: "+message);
 	}
 	
-	public static void main(String[] args) {
-		ErrorHandler eh = new ErrorHandler();
-		System.out.println(eh.errors.containsKey("201"));
-	}
 }
