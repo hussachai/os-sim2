@@ -1,3 +1,27 @@
+/*
+ * Name: Hussachai Puripunpinyo
+ * Course No.:  CS 5323
+ * Assignment title: PHASE I (March 5)
+ * TA's Name: 
+ *  - Alireza Boloorchi
+ *  - Sukanya Suwisuthikasem
+ * Global variables:
+ *  - cpu (the reference to CPU)
+ *  - memory (the reference to Memory)
+ *  - loader (the reference to Loader)
+ *  - io (the reference to InputOutput)
+ *  - errorHandler (the reference to ErrorHandler)
+ *  
+ *  Brief Description:
+ *  The System is the main entry of program and the container for every subroutines. 
+ *  It wires everything together via itself because it exposes the components
+ *  via the getter method and pass itself to some components that require.
+ *  
+ *  Remark:
+ *  I should not name this class as System because it will collide with 
+ *  the java.lang.System class that is imported by default.
+ *  
+ */
 package hussachai.osu.os2.system;
 
 import hussachai.osu.os2.system.Loader.LoaderContext;
@@ -9,16 +33,13 @@ import hussachai.osu.os2.system.io.InputOutput;
 import hussachai.osu.os2.system.storage.Memory;
 import hussachai.osu.os2.system.unit.Bit;
 import hussachai.osu.os2.system.unit.Word;
+import hussachai.osu.os2.system.util.TraceFormatter;
 
 import java.io.File;
 import java.math.BigInteger;
 
-import org.apache.commons.lang3.StringUtils;
-
 /**
- * I should not name this class as System because it will collide with 
- * the java.lang.System class that is imported by default.
- * 
+ * The system is the main entry of the simulation
  * @author hussachai
  *
  */
@@ -58,30 +79,23 @@ public class TheSystem {
 			
 			io.getLog().clearInfo();
 			
-			LoaderContext context = loader.loader(file);
-			/* assign the last instruction word as start address word*/ 
-			Word pc = context.instructionWord;
-			
-			if(context.traceSwitch==Bit.I){
-				io.getLog().clearTrace();
-				/* write trace header */
-				StringBuilder str = new StringBuilder();
-				str.append(StringUtils.center("[PC]", 12, ' ')).append("\t");
-				str.append("[Instruction]").append("\t");
-				str.append(StringUtils.center("[R]", 12, ' ')).append("\t");
-				str.append(StringUtils.center("[EA]", 12, ' ')).append("\t");
-				str.append("[(R) before]").append("\t");
-				str.append("[(EA) before]").append("\t");
-				str.append("[(R) after] ").append("\t");
-				str.append("[(EA) after]").append("\t");
-				io.getLog().trace(str.toString());
-			}
-			
-			io.getLog().info("Cumulative Job ID: 1");
-			
 			try{
 				
+				io.getLog().info("Cumulative Job ID: 1 (decimal)");
+				
+				LoaderContext context = loader.loader(file);
+				/* assign the last instruction word as start address word*/ 
+				Word pc = context.instructionWord;
+				
+				if(context.traceSwitch==Bit.I){
+					io.getLog().clearTrace();
+					/* write trace header */
+					io.getLog().trace("   Trace data in hex format");
+					io.getLog().trace(TraceFormatter.getTraceHeader());
+				}
+				
 				cpu.cpu(pc, context.traceSwitch);
+				
 			}finally{
 				
 				String clockHex = new BigInteger(String.valueOf(
@@ -103,9 +117,8 @@ public class TheSystem {
 
 	public ErrorHandler getErrorHandler() { return errorHandler; }
 	
+	/** entry point **/
 	public static void main(String[] args) {
-		
-		args = new String[]{"programs/example"};
 		
 		TheSystem system = new TheSystem();
 		InputOutput io = system.getIO();

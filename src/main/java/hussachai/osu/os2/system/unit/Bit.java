@@ -8,7 +8,6 @@ import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 
-
 /**
  * I use enum to represent the bit instead of actual bit
  * because it's easy to debug and the purpose of this program

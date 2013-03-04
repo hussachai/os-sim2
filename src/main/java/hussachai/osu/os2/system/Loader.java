@@ -1,5 +1,32 @@
+/*
+ * Name: Hussachai Puripunpinyo
+ * Course No.:  CS 5323
+ * Assignment title: PHASE I (March 5)
+ * TA's Name: 
+ *  - Alireza Boloorchi
+ *  - Sukanya Suwisuthikasem
+ * Global variables:
+ *  - memory (the reference to Memory)
+ *  - buffer (the buffer for Loader)
+ *  - io (the reference to InputOutput)
+ *  
+ *  Brief Description:
+ *  The loader load the program in hex format. Each digit hex will be convert
+ *  to binary in the word unit. It also performs validation such as length checking
+ *  and format checking. The load will load the data from user program and put
+ *  it to buffer, the buffer will be flushed to memory whenever it's full or at
+ *  the end of loading.
+ *  
+ *  Remark:
+ *  The loader() cannot have starting address and trace-switch as its arguments
+ *  which is different from specification. The reason that it takes file argument
+ *  instead of starting address and trace-switch is because the load is responsible
+ *  for parsing the user program file that has starting address and trace-switch data
+ *  encoded into the same source file as program. The System cannot invoke Loader and
+ *  passing those required arguments because it cannot know those values before Loader
+ *  has finished parsing the whole program. 
+ */
 package hussachai.osu.os2.system;
-
 
 import hussachai.osu.os2.system.error.Errors;
 import hussachai.osu.os2.system.error.LogicException;
@@ -17,9 +44,7 @@ import java.io.FileReader;
 import java.io.IOException;
 
 /**
- * 
- * This class is not thread-safe
- * 
+ * Program Loader
  * @author hussachai
  *
  */
@@ -69,10 +94,13 @@ public class Loader {
 					break;//EOF reached
 				}
 			}
+		}catch(SystemException e){
+			throw e;
 		}catch(IOException e){
 			throw new SystemException(Errors.IO_READ_ERROR);
 		}catch(Exception e){
-			throw new LogicException(e);
+			if(e instanceof LogicException) throw (LogicException)e;
+			throw new LogicException(e.getMessage(), e);
 		}finally{
 			if(bin!=null){
 				try{ bin.close(); }catch(Exception e){}
@@ -98,10 +126,11 @@ public class Loader {
 	}
 	
 	/**
+	 * Parse the program until termination character
 	 * 
 	 * @param context
 	 * @param data
-	 * @return
+	 * @return true if the parse reach the termination character
 	 */
 	private boolean parse(LoaderContext context, String data){
 		
@@ -141,7 +170,7 @@ public class Loader {
 					if(c==' '){
 						context.exitCharFound = true;
 					}else{
-						throw new SystemException(Errors.PROG_INVALID_TRACEBIT);
+						throw new SystemException(Errors.PROG_INVALID_FORMAT);
 					}
 				}
 			}
@@ -184,6 +213,14 @@ public class Loader {
 		return false;
 	}
 	
+	/**
+	 * LoaderContext is the collection of attributes
+	 * used by parse method and it can be passed around
+	 * for processing when need.
+	 * 
+	 * @author hussachai
+	 *
+	 */
 	class LoaderContext {
 		
 		int memoryIndex = 0;

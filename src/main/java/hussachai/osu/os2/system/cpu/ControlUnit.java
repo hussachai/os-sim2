@@ -8,6 +8,8 @@ import hussachai.osu.os2.system.unit.Bit;
 import hussachai.osu.os2.system.unit.Word;
 
 /**
+ * Control Unit which is part of CPU. 
+ * It can access the CPU attributes directly.
  * 
  * @author hussachai
  *
@@ -39,7 +41,7 @@ public class ControlUnit {
 	}
 	
 	/**
-	 * 
+	 * Decode instruction word to action
 	 * @param instruction
 	 * @return
 	 */

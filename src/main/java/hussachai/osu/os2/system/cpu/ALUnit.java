@@ -8,9 +8,12 @@ import hussachai.osu.os2.system.unit.Bit;
 import hussachai.osu.os2.system.unit.Word;
 
 /**
+ * Arithmetic and Logic Unit which is part of CPU
+ * It has all methods for calculation regarding to the instruction type
+ * and its attributes.
+ * It can access the CPU attributes directly.
  * 
  * @author hussachai
- *
  */
 public class ALUnit {
 	
@@ -30,13 +33,15 @@ public class ALUnit {
 		
 		Word tmp1 = cpu.registers[CPU.R_TMP1];
 		Word tmp2 = cpu.registers[CPU.R_TMP2];
+		Word tmp3 = cpu.registers[CPU.R_TMP3];
+		
 		Word pc = cpu.registers[CPU.R_PC];
 		Word r4 = cpu.registers[CPU.R_IDX];
+		Word r5 = cpu.registers[CPU.R_ACC];
 		Word instruction = cpu.registers[CPU.R_IR];
 		/* targetR can be either R4 or R5 depending on bit 4th in instruction */
-		Word targetR = instruction.getBits()[4]==Bit.I?
-				cpu.registers[CPU.R_IDX]:cpu.registers[CPU.R_ACC];
-		Word a = cpu.registers[CPU.R_TMP3];
+		Word targetR = instruction.getBits()[4]==Bit.I?r4:r5;
+		Word a = tmp3;
 		Word.copy(pc, a);
 		
 		Bit insAddrBits[] = instruction.slice(6, 11);
@@ -56,10 +61,9 @@ public class ALUnit {
 					memory.memory(Signal.READ, r4, tmp2);
 					add(tmp1.getBits(), tmp2.getBits(), false);
 					Word.copy(tmp1, cpu.mar);
-					ea = cpu.mar;
 				}else{
 					/* indirection addressing */
-					ea = memory.getCell(a);
+					memory.memory(Signal.READ, a, cpu.mar);
 				}
 			}else{
 				if(bitX==Bit.I){
@@ -67,13 +71,12 @@ public class ALUnit {
 					memory.memory(Signal.READ, r4, tmp2);
 					add(a.getBits(), tmp2.getBits(), false);
 					Word.copy(a, cpu.mar);
-					ea = cpu.mar;
 				}else{
 					/* direct addressing */
 					Word.copy(a, cpu.mar);
-					ea = cpu.mar;
 				}
 			}
+			ea = cpu.mar;
 		}
 		
 		switch(opCode){
@@ -96,7 +99,6 @@ public class ALUnit {
 			Word.copy(ea, pc);
 			break;
 		case JPL:
-//			memory.memory(Signal.READ, pc, targetR);
 			Word.copy(pc, targetR);
 			Word.copy(ea, pc);
 			break;
@@ -129,7 +131,7 @@ public class ALUnit {
 				output = String.valueOf(Bit.toDecimal(targetR.getBits()));
 			}
 			cpu.io.getScreen().display(output);
-			cpu.io.getLog().info("WR value: "+output+" (decimal)\n");
+			cpu.io.getLog().info("WR value: "+output+" (decimal)");
 			cpu.clock = cpu.clock + CPU.TIME_IO;
 			cpu.outputTime = cpu.outputTime + CPU.TIME_IO;
 			break;
@@ -422,5 +424,6 @@ public class ALUnit {
 			throw new SystemException(Errors.CPU_ARITHMETIC_OVERFLOW);
 		}
 	}
+	
 	
 }

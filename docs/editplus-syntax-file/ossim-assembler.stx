@@ -1,0 +1,72 @@
+#TITLE=OS Sim Assembly
+; *******************************************************************
+;    Basic Operating System Simulation Assembly Syntax File
+;    Writen by Hussachai Puripunpinyo
+;    SiberHus.com
+;
+;    Please send corrected revisions to me at hussachai.puripunpinyo@okstate.edu
+;    Any correction will be wellcome.
+; *******************************************************************
+
+#DELIMITER=,(){}[]-+*%="'~!&|\<>?:;#@
+#QUOTATION1='
+#QUOTATION2="
+#LINECOMMENT=;
+#LINECOMMENT2=//
+#WHOLELINE=n
+#ESCAPE=\
+#CASE=n
+#PREFIX1=
+#PREFIX2=#
+#PREFIX3=
+#PREFIX4=@
+#PREFIX5=
+#SUFFIX1=
+#SUFFIX2=
+#SUFFIX3=
+#SUFFIX4=
+#SUFFIX5=:
+
+; Reserved words
+
+#KEYWORD=Type I instructions
+and
+add
+str
+ld
+jmp
+jpl
+
+#KEYWORD=Type II instructions
+rd
+wr
+hlt
+
+#KETWORD=Type III instructions
+clr
+inc
+com
+bsw
+rtl
+rtr
+
+#KEYWORD=Type IV instructions
+nsk
+gtr
+lss
+neq
+gre
+lse
+usk
+
+#KEYWORD=Registers
+r0
+r1
+r2
+r3
+r4
+r5
+r6
+r7
+r8
+r9

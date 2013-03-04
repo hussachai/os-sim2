@@ -1,0 +1,14 @@
+;This system has memory 0-4095
+;The memory address register has 1 word size (12 bits)
+;The direct addressing mode can cover all memory that system has
+;However, we can use indexing addressing mode to add the value of R4
+;to the value of PC+instruction(6,11).
+;Unfortunately, we cannot raise the memory out of bound because
+;The result of adding cannot hold in 1 word size, the arithmetic 
+;error is raise instead.
+;@author Hussachai Puripunpinyo
+START	NSK		;do nothing
+	LD,  R4, IDX	;load the address of max value to R4
+	JMP, R4, NOWHERE;jump using indexing addressing mode
+MAX	DATA     7FF
+IDX	DATA     003

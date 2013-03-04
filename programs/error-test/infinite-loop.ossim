@@ -1,0 +1,6 @@
+;Infinite loop
+;@author Hussachai Puripunpinyo
+
+START	NSK,		;do nothing
+	NSK,		;do nothing again
+	JMP, START	;start over

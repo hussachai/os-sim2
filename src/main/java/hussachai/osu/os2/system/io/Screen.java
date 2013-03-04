@@ -1,6 +1,7 @@
 package hussachai.osu.os2.system.io;
 
 /**
+ * Screen (Monitor) simulation device
  * 
  * @author hussachai
  *

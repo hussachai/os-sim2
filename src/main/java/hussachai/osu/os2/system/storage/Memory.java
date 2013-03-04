@@ -1,3 +1,21 @@
+/*
+ * Name: Hussachai Puripunpinyo
+ * Course No.:  CS 5323
+ * Assignment title: PHASE I (March 5)
+ * TA's Name: 
+ *  - Alireza Boloorchi
+ *  - Sukanya Suwisuthikasem
+ * Global variables:
+ *  - addresses (The array of word (12 bits) unit. It has 4096 words)
+ *  - io (The reference to InputOutput)
+ *  
+ *  Brief Description:
+ *  Memory is used for accessing the data. It's the main storage of the system.
+ *  The keeps the instruction and data in the same array. The system that needs
+ *  to access memory must access it via the memory method that supports 
+ *  3 different operations - READ, WRITE, and DUMP.
+ *  
+ */
 package hussachai.osu.os2.system.storage;
 
 import hussachai.osu.os2.system.TheSystem;
@@ -21,7 +39,12 @@ import org.apache.commons.lang3.StringUtils;
  *
  */
 public class Memory {
-
+	
+	/** 
+	 * Memory operation enum
+	 * @author hussachai
+	 *
+	 */
 	public static enum Signal {
 		READ, WRIT, DUMP
 	}
@@ -105,17 +128,17 @@ public class Memory {
 					try{ bw.close(); }catch(Exception e){}
 				}
 			}
-			io.getLog().info("DUMP Memory [0-255]:");
+			io.getLog().info("DUMP Memory[0-255] in hex:");
 			io.getLog().info(writer.toString());
 		}
 	}
 	
-	public Word getCell(Word memoryAddr){
+	protected Word getCell(Word memoryAddr){
 		int memoryIdx = Bit.toDecimal(memoryAddr.getBits());
 		return getCell(memoryIdx);
 	}
 	
-	public Word getCell(int memoryIdx){
+	protected Word getCell(int memoryIdx){
 		if(memoryIdx>=SIZE){
 			throw new SystemException(Errors.MEM_RANGE_OUT_OF_BOUND);
 		}

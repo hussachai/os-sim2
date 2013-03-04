@@ -1,7 +1,7 @@
 package hussachai.osu.os2.system.error;
 
 /**
- * 
+ * The constant of error numbers.
  * @author hussachai
  *
  */
@@ -11,6 +11,8 @@ public final class Errors {
 	
 	/* CPU errors */
 	public static final int CPU_ARITHMETIC_OVERFLOW = 101;
+	
+	public static final int CPU_TASK_TIMEOUT = 102;
 	
 	/* Memory errors */
 	public static final int MEM_BUFFER_OVERFLOW = 201;
@@ -22,7 +24,6 @@ public final class Errors {
 	public static final int MEM_INVALID_RESERVED_SIZE = 204;
 	
 	public static final int MEM_DUMP_FAILED = 205;
-	
 	
 	/* IO errors */
 	public static final int IO_FILE_NOT_FOUND = 301;
@@ -41,6 +42,6 @@ public final class Errors {
 	public static final int PROG_INVALID_FORMAT = 504;
 	
 	/* User errors */
-	public static final int USR_INVALID_DATA_TYPE = 505;
+	public static final int USR_INVALID_DATA_TYPE = 601;
 	
 }

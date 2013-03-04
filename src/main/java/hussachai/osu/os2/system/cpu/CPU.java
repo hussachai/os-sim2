@@ -1,6 +1,35 @@
+/*
+ * Name: Hussachai Puripunpinyo
+ * Course No.:  CS 5323
+ * Assignment title: PHASE I (March 5)
+ * TA's Name: 
+ *  - Alireza Boloorchi
+ *  - Sukanya Suwisuthikasem
+ * Global variables:
+ *  - registers (The array of registers R0-R9)
+ *  - mar (Memory address register)
+ *  - mbr (Memory buffere register)
+ *  - clock (The clock is used as a counter for CPU cycle and IO)
+ *  - inputTime (The total virtual time spent for input)
+ *  - outputTime (The total virtual time spent for output) 
+ *  - execTime (The total virtual time spent for CPU cycle)
+ *  - traceSwitch
+ *  - controlUnit (The reference to Control Unit which is part of CPU) 
+ *  - alUnit (The reference to Arithmetic and Logic Unit which is part of CPU)
+ *  - memory (The reference to Memory)
+ *  - io (The reference to InputOutput)
+ *   
+ *  Brief Description:
+ *  CPU is the central processing unit which contains 2 subunit - Control unit
+ *  and Arithmetic & Logic Unit (ALU). The control unit will handle fetching and
+ *  decoding of the instruction respectively. The ALU will handle the execution
+ *  of instruction.
+ *  
+ */
 package hussachai.osu.os2.system.cpu;
 
 import hussachai.osu.os2.system.TheSystem;
+import static hussachai.osu.os2.system.util.TraceFormatter.*;
 import hussachai.osu.os2.system.error.Errors;
 import hussachai.osu.os2.system.error.SystemException;
 import hussachai.osu.os2.system.io.InputOutput;
@@ -10,7 +39,7 @@ import hussachai.osu.os2.system.unit.Bit;
 import hussachai.osu.os2.system.unit.Word;
 
 /**
- * 
+ * Central processing unit
  * @author hussachai
  *
  */
@@ -20,6 +49,8 @@ public class CPU {
 	public static final int TIME_IE = 1;
 	/** I/O time **/
 	public static final int TIME_IO = 10;
+	/** Task time limit for detecting infinite loop. */
+	public static final int TIME_LIMIT = 500;
 	
 	/** Alias for register R0 - constant number 0*/
 	public static final int R_0 = 0;
@@ -50,7 +81,7 @@ public class CPU {
 	
 	protected int clock = 0;
 	
-	protected int inputTime = 0, outputTime = 0;
+	protected int inputTime = 0, outputTime = 0, execTime = 0;
 	
 	protected Bit traceSwitch = Bit.O;
 	
@@ -95,6 +126,11 @@ public class CPU {
 		
 		while(true){
 			boolean hasNext = runCycle();
+			clock += TIME_IE;
+			execTime += TIME_IE;
+			if(execTime>=TIME_LIMIT){
+				throw new SystemException(Errors.CPU_TASK_TIMEOUT);
+			}
 			if(!hasNext) break;
 		}
 		
@@ -123,39 +159,38 @@ public class CPU {
 			Bit rBit = instruction.getBits()[4];
 			targetR = (rBit==Bit.I)?registers[R_IDX]:registers[R_ACC];
 			ea = (opCode.getType()==1)?this.mar:null;
-			traceInfo = pc+"\t"+instruction+"\t"+targetR+"\t";
+			traceInfo = trace(pc, instruction, targetR);
 			
 			if(ea!=null){
 				memory.memory(Signal.READ, ea, tmp2);
-				traceInfo += ea+"\t";
+				traceInfo += trace(ea);
 			}else{
-				traceInfo += "------------\t";
+				traceInfo += traceEmpty();
 			}
 			
 			memory.memory(Signal.READ, targetR, tmp1);
 			
-			traceInfo += tmp1+"\t";
+			traceInfo += trace(tmp1);
 			if(ea!=null){
-				traceInfo += tmp2+"\t";
+				traceInfo += trace(tmp2);
 			}else{
-				traceInfo += "------------\t";
+				traceInfo += traceEmpty();
 			}
 		}
 		
 		/* Increment PC before executing instruction */
 		incrementPC();
-		clock = clock + TIME_IE;
 		
 		hasNext = alUnit.execute(opCode);
 		
 		if(traceSwitch==Bit.I){
 			memory.memory(Signal.READ, targetR, tmp1);
-			traceInfo += tmp1+"\t";
+			traceInfo += trace(tmp1);
 			if(ea!=null){
 				memory.memory(Signal.READ, ea, tmp2);
-				traceInfo += tmp2+"\t";
+				traceInfo += trace(tmp2);
 			}else{
-				traceInfo += "------------\t";
+				traceInfo += traceEmpty();
 			}
 			
 			io.getLog().trace(traceInfo);

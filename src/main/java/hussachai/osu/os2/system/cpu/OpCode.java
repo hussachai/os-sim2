@@ -1,6 +1,9 @@
 package hussachai.osu.os2.system.cpu;
 
 /**
+ * The Enum of OpCode for type safety purpose.
+ * It also can describe itself the categories of the opcode
+ * that the value belongs to.
  * 
  * @author hussachai
  *

@@ -1,0 +1,48 @@
+;The towers of hanoi
+;@author Hussachai Puripunpinyo
+
+SUBMOVE	STR, R5, RETURN		;save return address
+	LD,  R4, POLE1		;
+	STR, R4, C1
+	LD,  R4, POLE2
+	STR, R4, C2
+	LD,  R4, POLE3
+	STR, R4, C3
+	
+START	RD,  R5			;get the number
+	STR, R5, INPUT		;save it in memory
+	LD,  R4, POLE1		;
+	STR, R4, C1
+	LD,  R4, POLE2
+	STR, R4, C3
+	LD,  R4, POLE3
+	STR, R4, C2
+	NEQ, R5			;if input = 0
+	HLT			;then do nothing
+
+;MOVE(N, C1, C3, C2)
+MOVE	STR, R5, N		;n=input
+	ADD, R5, DCR		;n = n - 1
+	NEQ, R5			;if n = 0
+	JMP, FINISH
+	STR, R5, N		;save n to memory
+	JPL, R5, SUBMOVE	;call subroutine to move
+	
+
+FINISH	LD,  R4, C1
+	LD,  R5, C3
+	WR,  R4			;output pole no.1 (move dish from pole1)
+	WR,  R5			;output pole no.3 (move dish to pole3)
+	HLT
+
+INPUT	DATA     000		;number of dishes
+N	DATA     000		;
+DCR	DATA     FFF		;decrement
+C1	DATA     000
+C2	DATA     000
+C3	DATA     000
+POLE1	DATA     001		;label for pole no. 1 (start)
+POLE2	DATA     002		;label for pole no. 2 (helper)
+POLE3	DATA     003		;label for pole no. 3 (finish)
+RETURN	DATA     000		;temporary return address variable
+

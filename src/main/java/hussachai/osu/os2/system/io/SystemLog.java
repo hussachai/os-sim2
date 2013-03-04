@@ -8,6 +8,9 @@ import java.io.FileWriter;
 import java.io.IOException;
 
 /**
+ * The logical device for handling system log
+ * There are 2 different logs - info and trace which
+ * will be redirect to system.log and trace.log respectively
  * 
  * @author hussachai
  *

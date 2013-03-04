@@ -5,6 +5,10 @@ import hussachai.osu.os2.system.unit.Word;
 
 /**
  * 
+ * Buffer is the temporary memory. It can be used by Loader
+ * to store 2-4 words before flushing all data to memory.
+ * Buffer is used in the real device to increase the performance. 
+ * 
  * Buffer is not thread-safe
  * 
  * @author hussachai
