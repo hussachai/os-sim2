@@ -1,0 +1,11 @@
+;bad trace flag
+START	NSK	;do nothing
+	NSK
+	NSK
+	NSK
+		;no HLT command to make sure that the 
+		;program will be terminated because of 
+		;invalid trace flag
+
+;hex code
+;004F00F00F00F00000 Z

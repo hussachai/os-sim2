@@ -1,6 +1,5 @@
 package hussachai.osu.os2.system.error;
 
-
 /**
  * System exception is the expected exception when the system
  * found the error during execution. 

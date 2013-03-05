@@ -12,3 +12,6 @@ START	NSK		;do nothing
 	JMP, R4, NOWHERE;jump using indexing addressing mode
 MAX	DATA     7FF
 IDX	DATA     003
+
+;hex code
+;005F003824C0FFF003000 0

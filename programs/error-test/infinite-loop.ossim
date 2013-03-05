@@ -1,6 +1,10 @@
 ;Infinite loop
 ;@author Hussachai Puripunpinyo
 
-START	NSK,		;do nothing
-	NSK,		;do nothing again
+START	NSK		;do nothing
+	NSK		;do nothing again
 	JMP, START	;start over
+
+;hex code
+;003F00F0043D000 0
+

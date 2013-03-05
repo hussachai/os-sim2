@@ -1,0 +1,12 @@
+;invalid check length
+;over check length cause warning
+;under check length cause error
+START	NSK	;do nothing
+	NSK
+	NSK
+	HLT
+
+;hex code (over check length)
+;00AF00F00F00610000 0
+;hex code (under check length)
+;001F00F00F00610000 0

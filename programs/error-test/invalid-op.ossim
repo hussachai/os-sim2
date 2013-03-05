@@ -10,3 +10,6 @@ START	LD,  R5, NUM	;Load number from memory
 	WR,  R5		;print 2 to screen
 	HLT		;stop program
 NUM	DATA     002
+
+;hex code
+;004302660610002000 0

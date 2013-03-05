@@ -1,0 +1,99 @@
+
+Software engineering issues
+=================================
+I decided to implement Bit unit as enum type because it can represent
+the actual bit better than other types. In addition, it's type-safe.
+For example, if I implemented the bit unit using char or int, I could
+assign any characters or any numbers to the bit variable. 
+The enum type is the singleton object that is created once its load
+at the first time. So, no matter what size of array of enum I created,
+the memory is still being used efficiently. I also added some convenient
+methods for converting back and forth between hex, decimal, and binary
+to the Bit enum class. Those methods are static which means it belongs
+to class not an instance. I use Bit class as a namespace for those conversion
+methods. Because memory must be accessed in the unit of word,
+I decieded to create the logical unit named Word to wrap the 12 bits inside
+and I use it to access memory data convieniently. 
+Word is a class not enum but it's a light-weight class.
+
+All OP-code operations are calculated in binary to represent the real system.
+The variables are carefully created, the system must represent the real system
+that has limited resources. For example, I used scratch-pad register (R6-R9)
+instead of creating the object from nowhere. Doing that makes the code longer
+but it can reflect the real system.
+
+This project is created in the object oriented language but I broke some 
+recommendation because the system should not follow all standard good
+practices like Google Android system that compromises between 
+object-oriented approach and procedural approach in order to make
+the system fast as possible. The same thing applied here because
+this is a system software not a business software.
+
+
+General approach to the problem
+=================================
+I used the test-driven development (TDD) process to approach 
+tackle the problem.
+
+
+List of the utilities being used
+=================================
+- Debugger: Java debugger (jdb)
+- Integrated build tool: Apache Maven
+- Version control system: Git 
+- 3rd party libraries: Apache commons-lang3
+- Test tool:  JUnit
+
+Bulk complexities of simulation program
+=================================
+Java	
+Number of files:	19
+Number of classes:	19
+Number of enum types:	3
+Number of methods:	79
+Number of decisions:	158 (If-clauses and the number of cases)
+Line of code
+	Blank		316
+	Comment		639
+	Code		1,255
+	Total Lines	2,210
+
+Approximate break-down of the time spent in the design, 
+coding, and testing
+=================================
+Task				Time spent
+----------------------------------------
+Conceptualization		3 days
+Requirements analysis		2 days
+Detailed specification of 
+software requirements		3 days
+Design	Software Design		2 days
+Implementation	Programming	5 days
+Testing	Create unit test 
+and integrated testing		2 days
+Deployment			1 days
+----------------------------------------
+Total				18 days
+
+
+Simulation portability
+=================================
+This simulation was developed using Java language. Java program is platform 
+independent because it needs java runtime to execute java byte code. Java runtime 
+can be installed in many systems including Windows x64/x86, Solaris SPARC x64/x86, 
+Mac OS X x64, Linux x64/x86. Other platforms can use java runtime from open source 
+project named OpenJDK which developer can build java runtime from source. 
+However, there are some issues that can break portability such as new line character 
+and path delimiter which are platform specific variable. I solve this problem by 
+using the Java system properties to obtain those values instead of hard coding. 
+The byte code doesn’t have to be recompiled when it’s moved from one platform to another. 
+The utilities being used in this project are also portable. Most of them are written 
+in Java except Git which is written in C but it has the version for Unix-liked system 
+and Windows.
+
+Implementation language
+=================================
+I chose Java because it’s static type language, platform independent, and it 
+also has a lot of free enterprise graded tools. For statically typed language,
+the IDE can support full refactoring that is a very convenient feature. 
+IDE of my choice is Eclipse IDE Juno 3.8 .

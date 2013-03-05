@@ -13,3 +13,6 @@ START	LD,  R5, MAX	;load 7FF value to R5
 	WR,  R5		;print the result
 MAX	DATA     7FF	;maximum integer value
 ONE	DATA     001	;1 constant
+
+;hex code
+;0053021026207FF001000 0

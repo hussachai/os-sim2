@@ -13,7 +13,6 @@ import java.io.IOException;
  * will be redirect to system.log and trace.log respectively
  * 
  * @author hussachai
- *
  */
 public class SystemLog {
 	
