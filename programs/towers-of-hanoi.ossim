@@ -9,7 +9,9 @@ SUBMOVE	STR, R5, RETURN		;save return address
 	LD,  R4, POLE3
 	STR, R4, C3
 	
-START	RD,  R5			;get the number
+START	RD,  R5			;get the number of dishes
+	GTR, R5			;if input <= 0
+	HLT			;then do nothing
 	STR, R5, INPUT		;save it in memory
 	LD,  R4, POLE1		;
 	STR, R4, C1
@@ -17,16 +19,17 @@ START	RD,  R5			;get the number
 	STR, R4, C3
 	LD,  R4, POLE3
 	STR, R4, C2
-	NEQ, R5			;if input = 0
-	HLT			;then do nothing
-
-;MOVE(N, C1, C3, C2)
-MOVE	STR, R5, N		;n=input
+	STR, R5, N		;n=input
 	ADD, R5, DCR		;n = n - 1
 	NEQ, R5			;if n = 0
-	JMP, FINISH
+	
+	JPL, R5, MOVE		;call subroutine to move
+	
+;MOVE(N, C1, C3, C2)
+MOVE	
+	
 	STR, R5, N		;save n to memory
-	JPL, R5, SUBMOVE	;call subroutine to move
+	
 	
 
 FINISH	LD,  R4, C1

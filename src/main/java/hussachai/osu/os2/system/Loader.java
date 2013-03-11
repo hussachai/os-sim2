@@ -221,7 +221,7 @@ public class Loader {
 	 * @author hussachai
 	 *
 	 */
-	class LoaderContext {
+	public static class LoaderContext {
 		
 		int memoryIndex = 0;
 		Bit traceSwitch = Bit.O;

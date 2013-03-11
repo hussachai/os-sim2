@@ -19,13 +19,14 @@ public class TowersOfHanoi {
 			moveDish(n - 1, start, helper, finish);
 			System.out.println(">>Move a coin from " + start + " to " + finish);
 			moveDish(n - 1, helper, finish, start);
+			System.out.println("FUCK"+n);
 		} else if (n < 0) {
 			System.out.println("Input must be positive");
 		}
 	}
 	
 	public static void main(String[] args) throws IOException {
-		moveDish(2, 1, 3, 2);
+		moveDish(4, 1, 3, 2);
 	}
 	
 }

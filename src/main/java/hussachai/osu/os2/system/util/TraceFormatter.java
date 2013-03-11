@@ -45,7 +45,7 @@ public class TraceFormatter {
 		}
 		StringBuilder str = new StringBuilder();
 		for(Word word: words){
-			if(words==null){
+			if(word==null){
 				str.append(traceEmpty());
 			}else{
 				str.append(StringUtils.center(StringUtils.leftPad(
