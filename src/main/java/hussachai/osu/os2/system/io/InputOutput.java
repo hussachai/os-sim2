@@ -10,23 +10,23 @@ package hussachai.osu.os2.system.io;
  *
  */
 public class InputOutput {
-	
-	private SystemLog log = new SystemLog();
-	
-	private Screen screen = new Screen();
-	
-	private Keyboard keyboard = new Keyboard();
-	
-	public SystemLog getLog(){
-		return log;
-	}
-	
-	public Screen getScreen() {
-		return screen;
-	}
-
-	public Keyboard getKeyboard() {
-		return keyboard;
-	}
-	
+    
+    private SystemLog log = new SystemLog();
+    
+    private Screen screen = new Screen();
+    
+    private Keyboard keyboard = new Keyboard();
+    
+    public SystemLog getLog(){
+        return log;
+    }
+    
+    public void display(String data) {
+        screen.display(data);
+    }
+    
+    public String readLine() {
+        return keyboard.readLine();
+    }
+    
 }

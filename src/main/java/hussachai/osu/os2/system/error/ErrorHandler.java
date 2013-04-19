@@ -34,42 +34,42 @@ import java.util.Properties;
  *
  */
 public class ErrorHandler {
-	
-	private Properties errors = new Properties();
-	
-	private InputOutput io;
-	private Memory memory;
-	
-	public ErrorHandler(TheSystem system){
-		
-		this.io = system.getIO();
-		this.memory = system.getMemory();
-		
-		InputStream in = null;
-		try{
-			in = ErrorHandler.class.getResourceAsStream("/errors.properties");
-			if(in==null) throw new FileNotFoundException();
-			errors.load(in);
-		}catch(IOException e){
-			throw new LogicException("Unable to load errors.properties file from classpath");
-		}finally{
-			if(in!=null){
-				try{ in.close(); }catch(Exception e){}
-			}
-		}
-	}
-	
-	/**
-	 * Specification required method.
-	 * @param errorNumber
-	 */
-	public void errorHandler(int errorNumber){
-		String message = errors.getProperty(String.valueOf(errorNumber));
-		io.getLog().info("Terminated with error no. "+errorNumber);
-		io.getLog().info("Description: "+message);
-		
-		memory.memory(Signal.DUMP, 0, null);
-		
-	}
-	
+    
+    private Properties errors = new Properties();
+    
+    private InputOutput io;
+    private Memory memory;
+    
+    public ErrorHandler(TheSystem system){
+        
+        this.io = system.getIO();
+        this.memory = system.getMemory();
+        
+        InputStream in = null;
+        try{
+            in = ErrorHandler.class.getResourceAsStream("/errors.properties");
+            if(in==null) throw new FileNotFoundException();
+            errors.load(in);
+        }catch(IOException e){
+            throw new LogicException("Unable to load errors.properties file from classpath");
+        }finally{
+            if(in!=null){
+                try{ in.close(); }catch(Exception e){}
+            }
+        }
+    }
+    
+    /**
+     * Specification required method.
+     * @param errorNumber
+     */
+    public void errorHandler(int errorNumber){
+        String message = errors.getProperty(String.valueOf(errorNumber));
+        io.getLog().info("Terminated with error no. "+errorNumber);
+        io.getLog().info("Description: "+message);
+        
+        memory.memory(Signal.DUMP, 0, null);
+        
+    }
+    
 }

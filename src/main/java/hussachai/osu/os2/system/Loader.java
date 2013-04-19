@@ -1,236 +1,236 @@
-/*
- * Name: Hussachai Puripunpinyo
- * Course No.:  CS 5323
- * Assignment title: PHASE I (March 5)
- * TA's Name: 
- *  - Alireza Boloorchi
- *  - Sukanya Suwisuthikasem
- * Global variables:
- *  - memory (the reference to Memory)
- *  - buffer (the buffer for Loader)
- *  - io (the reference to InputOutput)
- *  
- *  Brief Description:
- *  The loader load the program in hex format. Each digit hex will be convert
- *  to binary in the word unit. It also performs validation such as length checking
- *  and format checking. The load will load the data from user program and put
- *  it to buffer, the buffer will be flushed to memory whenever it's full or at
- *  the end of loading.
- *  
- *  Remark:
- *  The loader() cannot have starting address and trace-switch as its arguments
- *  which is different from specification. The reason that it takes file argument
- *  instead of starting address and trace-switch is because the load is responsible
- *  for parsing the user program file that has starting address and trace-switch data
- *  encoded into the same source file as program. The System cannot invoke Loader and
- *  passing those required arguments because it cannot know those values before Loader
- *  has finished parsing the whole program. 
- */
 package hussachai.osu.os2.system;
-
 import hussachai.osu.os2.system.error.Errors;
-import hussachai.osu.os2.system.error.LogicException;
 import hussachai.osu.os2.system.error.SystemException;
-import hussachai.osu.os2.system.io.InputOutput;
 import hussachai.osu.os2.system.storage.Buffer;
-import hussachai.osu.os2.system.storage.Memory;
-import hussachai.osu.os2.system.storage.Memory.Signal;
 import hussachai.osu.os2.system.unit.Bit;
 import hussachai.osu.os2.system.unit.Word;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
-/**
- * Program Loader
- * @author hussachai
- *
- */
 public class Loader {
-	
-	public static final int BUFFER_INIT_SIZE = 10;
-	
-	private Memory memory;
-	
-	private Buffer buffer;
-	
-	private InputOutput io;
-	
-	public Loader(TheSystem system){
-		
-		this.memory = system.getMemory();
-		this.buffer = new Buffer(BUFFER_INIT_SIZE);
-		this.io = system.getIO();
-	}
-	
-	/**
-	 * The loader uses one space to indicate the end of program but if there
-	 * is no space present, the end of data will be the end of program.
-	 * 
-	 * The only valid character after the end of program symbol is 0 or 1
-	 * which is a trace bit. Trace bit must be immediate after the end of program symbol.
-	 * If a trace bit is absence, the default value is 0 which means 'off'.
-	 * 
-	 * The new line(\n) and carriage return (\r) are ignore by loader.
-	 * 
-	 * [Specification required method]
-	 * 
-	 * return start address (PC)
-	 */
-	public LoaderContext loader(File file){
-		
-		LoaderContext context = new LoaderContext();
-		BufferedReader bin = null;
-		String data = null;
-		
-		try{
-			/* this function will get rid of new line character and 
-			 * handle input character encoding */
-			bin = new BufferedReader(new FileReader(file));
-			while((data=bin.readLine())!=null){
-				if(parse(context, data)){
-					break;//EOF reached
-				}
-			}
-		}catch(SystemException e){
-			throw e;
-		}catch(IOException e){
-			throw new SystemException(Errors.IO_READ_ERROR);
-		}catch(Exception e){
-			if(e instanceof LogicException) throw (LogicException)e;
-			throw new LogicException(e.getMessage(), e);
-		}finally{
-			if(bin!=null){
-				try{ bin.close(); }catch(Exception e){}
-			}
-		}
-		
-		flushBuffer(context);//make sure that there's nothing left in buffer.
-		
-		memory.memory(Signal.WRIT, context.memoryIndex-1, new Word());//erase PC from memory
-		
-		if(context.charCounter%3==0){
-			int lengthCheck = Bit.toDecimal(context.checkLengthWord.getBits());
-			if(lengthCheck<context.cmdCounter-1){
-				throw new SystemException(Errors.MEM_INVALID_RESERVED_SIZE);
-			}else if(lengthCheck>context.cmdCounter-1){
-				io.getLog().info("WARNING: length check is greater than actual data");
-			}
-		}else{
-			throw new SystemException(Errors.PROG_INVALID_FORMAT);
-		}
-		
-		return context;
-	}
-	
-	/**
-	 * Parse the program until termination character
-	 * 
-	 * @param context
-	 * @param data
-	 * @return true if the parse reach the termination character
-	 */
-	private boolean parse(LoaderContext context, String data){
-		
-		for(int i=0;i<data.length();i++){
-			char c = data.charAt(i);
-			if(context.exitCharFound){
-				if(c=='1' || c=='0'){
-					if(c=='1') context.traceSwitch = Bit.I;
-					if(data.length()-i>1){
-						io.getLog().info("WARNING: input after termination symbol are ignored");
-					}
-					return true;
-				}
-				
-				throw new SystemException(Errors.PROG_INVALID_TRACEBIT);
-				
-			}else{
-				if(isValidInputChar(c)){
-					context.charBuffer[context.charBufferIdx] = c;
-					context.charCounter++;
-					context.charBufferIdx++;
-					if(context.charCounter%3==0){
-						context.charBufferIdx = 0;
-						String wordStr = new String(context.charBuffer); 
-						context.instructionWord = Word.fromHexString(wordStr);
-						if(context.checkLengthWord==null){
-							context.checkLengthWord = context.instructionWord;
-						}else{
-							context.cmdCounter++;
-							buffer.add(context.instructionWord);
-							if(buffer.isFull()){
-								flushBuffer(context);
-							}
-						}
-					}
-				}else{
-					if(c==' '){
-						context.exitCharFound = true;
-					}else{
-						throw new SystemException(Errors.PROG_INVALID_FORMAT);
-					}
-				}
-			}
-		}
-		
-		return false;
-	}
-	
-	/**
-	 * Transfer all data in buffer to memory regardless of the 
-	 * number of data in buffer.
-	 * @param context
-	 */
-	private void flushBuffer(LoaderContext context){
-		Word words[] = buffer.flush();
-		for(Word word: words){
-			memory.memory(Memory.Signal.WRIT, context.memoryIndex, word);
-			context.memoryIndex++;
-		}
-	}
-	
-	/**
-	 * Check the input character whether it is in
-	 * the accepted character or not.
-	 * Code
-	 * 0-9 = 48-57
-	 * A-F = 65-70
-	 * a-f = 97-102
-	 * @param input
-	 */
-	private boolean isValidInputChar(char input){
-		int code = (int)input;
-		if(code>47 && code<58){
-			return true;
-		}else if(code>64 && code<71){
-			return true;
-		}else if(code>96 && code<103){
-			return true;
-		}
-		return false;
-	}
-	
-	/**
-	 * LoaderContext is the collection of attributes
-	 * used by parse method and it can be passed around
-	 * for processing when need.
-	 * 
-	 * @author hussachai
-	 *
-	 */
-	public static class LoaderContext {
-		
-		int memoryIndex = 0;
-		Bit traceSwitch = Bit.O;
-		Word checkLengthWord = null;
-		Word instructionWord = null;
-		char charBuffer[] = new char[3];
-		int charCounter = 0, charBufferIdx = 0, cmdCounter = 0;
-		boolean exitCharFound = false;
-	}
-	
-	
+    
+    private Buffer buffer;
+    
+    /* Keep tracking last position file has been read */
+    private long lastFilePointer = 0;
+    
+    public Loader(TheSystem system){
+        this.buffer = new Buffer(128);
+    }
+    
+    public Context loader(File file){
+        
+        Context context = new Context();
+        RandomAccessFile dataInput = null;
+        try{
+            
+            dataInput = new RandomAccessFile(file, "r");
+            
+            /* resume reading from the last point */
+            dataInput.seek(this.lastFilePointer);
+            boolean done = false;
+            String data = null;
+            while( (data = dataInput.readLine()) !=null){
+                /*guarantee that no space surrounding data*/
+                data = data.trim();
+                
+                done = parseLine(context, data);
+                
+                if(done){
+                    this.lastFilePointer = dataInput.getFilePointer();
+                    /*validate*/
+                    int dataTotal = context.dataList.size();
+                    if(context.dataLines<dataTotal){
+                        System.out.println("missing data items");//TODO
+                    }else if(context.dataLines>dataTotal){
+                        System.out.println("extra data unused");//TODO
+                    }
+                    //TODO: add dataList to the simulatedKeyboard
+                    Word jobData[] = buffer.flush();
+                    System.out.println(Arrays.toString(jobData));
+                    
+                }
+            };
+            
+            /* Signal the end of file and no more job*/
+            if( (!done) && data==null) return null;
+            
+        }catch(FileNotFoundException e){
+            e.printStackTrace();
+        }catch(IOException e){
+            e.printStackTrace();
+        }finally{
+            try{ 
+                if(dataInput!=null) dataInput.close(); 
+            }catch(Exception e){}
+        }
+        
+        return context;
+    }
+    
+    /**
+     * 
+     * @param context
+     * @param data
+     * @return true if the program is end 
+     */
+    private boolean parseLine(Context context, String data){
+        
+        if(data.startsWith("**")){
+            String commands[] = data.split("\\s+");
+            if(commands.length==4){
+                //JOB command
+                if("JOB".equals(commands[1])){
+                    if(context.part!=ModulePart.JOB){
+                        //TODO: illegalstate
+                    }
+                    context.dataLines = Word.fromHexString(commands[2]).toDecimal();
+                    context.outputLines = Word.fromHexString(commands[3]).toDecimal();
+                    context.part = ModulePart.JOB_PAYLOAD;
+                }else{
+                    //TODO: error
+                }
+            }else if(commands.length==2){
+                //DATA or END command
+                if("DATA".equals(commands[1])){
+                    if(context.part!=ModulePart.DATA){
+                        System.out.println("error expected DATA part");//TODO
+                    }
+                    if(context.dataLines>0){
+                        context.part = ModulePart.DATA_PAYLOAD;
+                    }else{
+                        context.part = ModulePart.END;
+                    }
+                }else if("END".equals(commands[1])){
+                    if(context.part!=ModulePart.END){
+                        System.out.println("error expected END part");//TODO
+//                        throw new SystemException(errorCode)
+                    }
+                    return true;
+                }else{
+                    System.out.println("invalid "+commands[1]);//TODO
+                }
+            }else{
+                System.out.println("invalid commands expected 2 or 4 parts");//TODO
+            }
+        }else{
+            if(data.length()==3){
+                if(context.length==-1 && context.part==ModulePart.JOB_PAYLOAD){
+                    /* If the data length is 3 and length word hasn't been read
+                     * and part is DATA_PAYLOAD, it is probably the length check data */
+                    context.length = Word.fromHexString(data).toDecimal();
+                    return false;
+                }else if(context.part==ModulePart.DATA_PAYLOAD){
+                    context.dataList.add(Word.fromHexString(data));
+                    if(context.dataList.size()==context.dataLines){
+                        context.part = ModulePart.END;
+                    }
+                    return false;
+                }
+            }
+            if(data.indexOf(" ")!=-1){
+                /* if there is space in the data, it suppose to be 
+                 * the start address and trace switch */
+                String parts[] = data.split("\\s+");
+                if(parts.length!=2){
+                    throw new SystemException(Errors.PROG_INVALID_TRACEBIT);
+                }
+                context.startAddress = Word.fromHexString(parts[0]);
+                if(parts.length>1){
+                    context.traceSwitch = Word.fromHexString(parts[1])
+                            .toDecimal()>0?Bit.I:Bit.O;
+                }
+                context.part = ModulePart.DATA;
+            }else{
+                if(data.length()%3!=0){/* wrong hex format */
+                    throw new SystemException(Errors.PROG_INVALID_FORMAT);
+                }
+                String wordStr = null;
+                for(int i=0; i<data.length();i+=3){
+                    wordStr = data.substring(i, i+3);
+                    context.instruction = Word.fromHexString(wordStr);
+                    buffer.add(context.instruction);
+                }
+            }
+        }
+        
+        return false;
+    }
+    
+    public static enum ModulePart {
+        JOB, JOB_PAYLOAD, DATA, DATA_PAYLOAD, END
+    }
+    
+    public static class Context {
+        
+        /*
+         * Expected part that is going to encounter in the next line of reading.
+         */
+        private ModulePart part = ModulePart.JOB;
+        
+        /* number of data lines in job
+         * this is the expected number not actual number 
+         * */
+        private int dataLines = 0;
+        
+        private List<Word> dataList = new ArrayList<Word>();
+        
+        /* number of output lines in job
+         * this is the expected number not actual number 
+         * */
+        private int outputLines = 0;
+        
+        private Bit traceSwitch = Bit.O;//off by default
+        
+        /* check length for validating actual number of instruction
+         * in the other hand, it's expected number of instructions 
+         * */
+        private int length = -1;
+        
+        /* hold the last instruction word */
+        private Word instruction;
+        
+        private Word startAddress;
+        
+        public int getDataLines(){ return dataLines; }
+        public List<Word> getDataList(){ return dataList; }
+        public int getOutputLines(){ return outputLines; }
+        public Bit getTraceSwitch(){ return traceSwitch; }
+        public int getLength(){ return length; }
+        public Word getStartAddress(){ return startAddress; }
+        
+        void clear(){
+            part = ModulePart.JOB;
+            dataLines = 0;
+            dataList.clear();
+            outputLines = 0;
+            traceSwitch= Bit.O;
+            length = -1;
+            instruction = null;
+            startAddress = null;
+        }
+    }
+    
+    public static void main(String[] args) {
+        Loader loader = new Loader(new TheSystem());
+//        for(int i=0;i<3;i++){
+            Context context = null;
+            while((context=loader.loader(new File("programs/tb")))!=null){
+                System.out.println("Part:"+context.part);
+                System.out.println("DataLines:"+context.dataLines);
+                System.out.println("DataList:"+context.dataList);
+                System.out.println("OutputLines:"+context.outputLines);
+                System.out.println("TraceSwitch:"+context.traceSwitch);
+                System.out.println("Length:"+context.length);
+                System.out.println("LastInstruction:"+context.instruction);
+                System.out.println("StartAddress:"+context.startAddress.toBinString());
+            }
+//        }
+    }
 }
