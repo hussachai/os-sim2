@@ -19,9 +19,8 @@ package hussachai.osu.os2.system.error;
 
 
 import hussachai.osu.os2.system.TheSystem;
-import hussachai.osu.os2.system.io.InputOutput;
+import hussachai.osu.os2.system.io.IOManager;
 import hussachai.osu.os2.system.storage.Memory;
-import hussachai.osu.os2.system.storage.Memory.Signal;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -37,7 +36,7 @@ public class ErrorHandler {
     
     private Properties errors = new Properties();
     
-    private InputOutput io;
+    private IOManager io;
     private Memory memory;
     
     public ErrorHandler(TheSystem system){
@@ -68,7 +67,8 @@ public class ErrorHandler {
         io.getLog().info("Terminated with error no. "+errorNumber);
         io.getLog().info("Description: "+message);
         
-        memory.memory(Signal.DUMP, 0, null);
+        //TODO: 
+//        memory.memory(Signal.DUMP, 0, null);
         
     }
     

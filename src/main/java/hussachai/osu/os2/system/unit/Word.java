@@ -56,7 +56,7 @@ public class Word {
      * @return
      */
     public boolean isNegativeNumber(){
-        return getBits()[0]==Bit.I?true:false;
+        return bits[0]==Bit.I?true:false;
     }
     
     public void increment(){

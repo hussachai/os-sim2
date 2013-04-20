@@ -1,7 +1,8 @@
 package hussachai.osu.os2.system;
 
-import hussachai.osu.os2.system.io.IOType;
-import hussachai.osu.os2.system.storage.Memory.Block;
+import hussachai.osu.os2.system.storage.Memory.Partition;
+import hussachai.osu.os2.system.unit.Bit;
+import hussachai.osu.os2.system.unit.ID;
 import hussachai.osu.os2.system.unit.Word;
 
 /**
@@ -12,58 +13,81 @@ import hussachai.osu.os2.system.unit.Word;
  */
 public class PCB implements Comparable<PCB>{
     
-    /** Unique job id in the system at a time */ 
-    protected Word jobId = new Word();
+    /** Unique job id in the system at a time */
+    protected ID jobID = null;
+    
+    protected Bit traceSwitch = null;
     /** Snapshot of current PC */
-    protected Word pc = new Word();
+    protected Word pc = null;
     /** Snapshot of current IR */
     protected Word ir = new Word();
     /** Time that the job entered the system */
-    protected int createdTime;
-    /** CPU time used by the job */
-    protected int cpuUsageTime;
+    protected int createdTime = 0;
+    /** 
+     * CPU time used by the job. 
+     * */
+    protected int cpuUsageTime = 0;
+    /**
+     * I/O time used by the job
+     */
+    protected int ioUsageTime = 0;
+    /** 
+     * Remainder of the last quantum 
+     * The Scheduler will give 35 times and it will be decremented 
+     * by CPU time until the value is 0 or I/O interrupt occurs 
+     * whichever comes first.
+     * */
+    protected int remainingQuantum = 0;
     /**
      * Time that has already spent by the I/O
      * This value is counted down from 10 to 0
      * 10 is virtual I/O completion time. 
      * */
-    protected int ioUsageTime;
-    /** Remainder of the last quantum */
-    protected int remainingQuantum;
+    protected int remainingIOTime = 0;
     
-    /* extra attributes in addition to the specification
-     * because the specification says that PCB must contain AT LEAST 
-     * above information. so, PCB can contain more information than 
-     * it's specified in specification.   
-     * */
     /* ========================================= */
-    /** The occupied space in the allocated block.
-     * This fragmentation will be the result of
-     * occupied is subtracted from block.getSize() 
+    protected int length = 0;
+    protected int dataLines = 0;
+    protected int outputLines = 0;
+    
+    /** Partition is the logical unit that is managed by Memory Manager.
+     *  Base and bound address can be obtained from partition including
+     *  the partition size and available status
      */
-    protected int occupied;
+    protected Partition partition;
     
-    /** Block is the logical unit that is managed by Memory Manager.
-     *  Base and bound address can be obtained from block including
-     *  the block size and available status
-     */
-    protected Block block;
     
-    protected IOType ioType;
-    
-    public Word getJobId(){ return jobId; }
-    public Word getPc(){ return pc; }
-    public Word getIr(){ return ir; }
-    public Block getBlock(){ return block; }
+    public Word getJobID(){ return jobID; }
+    public Word getPC(){ return pc; }
+    public Word getIR(){ return ir; }
     public int getCreatedTime(){ return createdTime; }
     public int getCpuUsageTime(){ return cpuUsageTime; }
     public int getIoUsageTime(){ return ioUsageTime; }
     public int getRemainingQuantum(){ return remainingQuantum; }
+    public Partition getPartition(){ return partition; }
     
+    /** The occupied space in the allocated partition. */
+    public int getOccupiedSpace(){ 
+        return length+dataLines+outputLines; 
+    } 
+    
+    /**
+     * The fragmentation will be the result of
+     * fragmentation = partition.getSize() - occupied space 
+     * @return
+     */
+    public int getFragmentation(){
+        return partition.getSize()-getOccupiedSpace();
+    }
+    
+    /**
+     * This method is used for ordering the PCB in blocked queue
+     * based on natural order of the remaining I/O time.
+     */
     @Override
     public int compareTo(PCB o) {
-        return new Integer(ioUsageTime)
-            .compareTo(o.ioUsageTime);
+        return new Integer(remainingIOTime)
+            .compareTo(o.remainingIOTime);
     }
     
     

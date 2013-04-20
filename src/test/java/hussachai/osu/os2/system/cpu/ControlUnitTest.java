@@ -7,22 +7,22 @@ import org.junit.Before;
 import org.junit.Test;
 
 public class ControlUnitTest {
-	
-	private Memory memory;
-	private CPU cpu;
-	private ControlUnit controlUnit;
-	
-	@Before
-	public void beforeTest(){
-		TheSystem system = new TheSystem();
-		memory = system.getMemory();
-		cpu = system.getCPU();
-		controlUnit = cpu.controlUnit;
-	}
-	
-	@Test
-	public void testNothing(){
-		
-	}
-	
+    
+    private Memory memory;
+    private CPU cpu;
+    private ControlUnit controlUnit;
+    
+    @Before
+    public void beforeTest(){
+        TheSystem system = new TheSystem();
+        memory = system.getMemory();
+        cpu = system.getCPU();
+        controlUnit = cpu.controlUnit;
+    }
+    
+    @Test
+    public void testNothing(){
+        
+    }
+    
 }

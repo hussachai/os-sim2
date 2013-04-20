@@ -1,12 +1,12 @@
 /*
  * Name: Hussachai Puripunpinyo
  * Course No.:  CS 5323
- * Assignment title: PHASE I (March 5)
+ * Assignment title: PHASE II (April 16)
  * TA's Name: 
  *  - Alireza Boloorchi
  *  - Sukanya Suwisuthikasem
  * Global variables:
- *  - addresses (The array of word (12 bits) unit. It has 4096 words)
+ *  - addresses (The array of word (12 bits) unit. It has 512 words)
  *  - io (The reference to InputOutput)
  *  
  *  Brief Description:
@@ -24,7 +24,7 @@ import hussachai.osu.os2.system.TheSystem;
 import hussachai.osu.os2.system.error.Errors;
 import hussachai.osu.os2.system.error.LogicException;
 import hussachai.osu.os2.system.error.SystemException;
-import hussachai.osu.os2.system.io.InputOutput;
+import hussachai.osu.os2.system.io.IOManager;
 import hussachai.osu.os2.system.unit.Bit;
 import hussachai.osu.os2.system.unit.Word;
 
@@ -47,16 +47,18 @@ public class Memory {
      */
     public static final int MEMORY_SIZE = 512;
     
-    public static final int BLOCK_NUMBERS = 7;
+    public static final int PARTITION_NUMBERS = 7;
+    
+    public static final int MAX_PARTITION_SIZE = 128;
     
     private Word addresses[] = new Word[MEMORY_SIZE];
     
-    /* Memory manager groups each consecutive addresses into 7 blocks
+    /* Memory manager groups each consecutive addresses into 7 partitions
      * with different size.
      */
-    private Block blocks[] = new Block[BLOCK_NUMBERS];
+    private Partition partitions[] = new Partition[PARTITION_NUMBERS];
     
-    private InputOutput io;
+    private IOManager io;
     
     private Scheduler scheduler;
     
@@ -66,44 +68,47 @@ public class Memory {
         for(int i=0; i<MEMORY_SIZE;i++){
             addresses[i] = new Word();
         }
-        /* initialize blocks */
-        blocks[0] = new Block(0, 0, 31);//32 words
-        blocks[1] = new Block(1, 32, 63);//32 words
-        blocks[2] = new Block(2, 64, 127);//64 words
-        blocks[3] = new Block(3, 128, 191);//64 words
-        blocks[4] = new Block(4, 192, 255);//64 words
-        blocks[5] = new Block(5, 256, 383);//128 words
-        blocks[6] = new Block(6, 384, 511);//128 words
+        /* initialize partitions */
+        partitions[0] = new Partition(0, 0, 31);//32 words
+        partitions[1] = new Partition(1, 32, 63);//32 words
+        partitions[2] = new Partition(2, 64, 127);//64 words
+        partitions[3] = new Partition(3, 128, 191);//64 words
+        partitions[4] = new Partition(4, 192, 255);//64 words
+        partitions[5] = new Partition(5, 256, 383);//128 words
+        partitions[6] = new Partition(6, 384, 511);//128 words
     }
     
     /**
-     * Try to allocate available block based on the best fit policy.
+     * Try to allocate available partition based on the best fit policy.
      * If the allocation is success, the allocate method will return
-     * the block pointer. Otherwise, null will return.
+     * the partition pointer. Otherwise, null will return.
      * @param size
      * @return
      */
-    public Block allocate(int size){
-        
-        for(Block block: blocks){
-            if(block.getSize()>=size && block.free){
-                block.free = false;
-                return block;
+    public Partition allocate(int size){
+        if(size>MAX_PARTITION_SIZE){
+            throw new SystemException(Errors.PROG_TOO_LONG);
+        }
+        for(Partition partition: partitions){
+            if(partition.getSize()>=size && partition.free){
+                partition.free = false;
+                return partition;
             }
         }
         return null;
     }
     
     /**
-     * Deallocate the memory using block pointer to indicate
+     * Deallocate the memory using partition pointer to indicate
      * the range of the addresses that will be erased and marked as free. 
-     * @param block
+     * @param partition
      */
-    public void deallocate(Block block){
-        block.free = true;
+    public void deallocate(Partition partition){
+        if(partition==null) return;
+        partition.free = true;
         /* clear memory */
-        for(int i=block.baseAddress;i<=block.boundAddress;i++){
-            memory(Signal.WRIT, i, new Word());
+        for(int i=partition.baseAddress;i<=partition.boundAddress;i++){
+            memory(partition, Signal.WRIT, i, new Word());
         }
     }
     
@@ -118,16 +123,27 @@ public class Memory {
      */
     public void memory(Signal signal, Word memoryAddr, Word variable){
         int memoryIdx = Bit.toDecimal(memoryAddr.getBits());
-        memory(signal, memoryIdx, variable);
+        
+        if(scheduler.getRunning()==null){
+            throw new LogicException("Accessing memory by non process!!!");
+        }
+        
+        PCB pcb = scheduler.getRunning();
+        
+        memory(pcb.getPartition(), signal, memoryIdx, variable);
     }
     
     /**
+     * This memory function should be accessed directly by Loader. Because when
+     * the Loader allocates memory successfully, it will get the Partition back.
+     * No process is related to that action; so, Loader must not call this function
+     * instead of the overload one.  
      * 
      * @param signal
      * @param memoryIdx
      * @param variable
      */
-    public void memory(Signal signal, int memoryIdx, Word variable){
+    public void memory(Partition partition, Signal signal, int memoryIdx, Word variable){
         
         if(signal == Signal.READ || signal == Signal.WRIT){
             if(variable==null){
@@ -135,14 +151,9 @@ public class Memory {
             }
         }
         
-        if(scheduler.getRunning()==null){
-            throw new LogicException("Accessing memory by non process!!!");
-        }
-        
-        PCB pcb = scheduler.getRunning();
         /* Convert virtual address to physical address */
-        memoryIdx += pcb.getBlock().getBaseAddress();
-        if(memoryIdx>pcb.getBlock().getBoundAddress()){
+        memoryIdx += partition.getBaseAddress();
+        if(memoryIdx>partition.getBoundAddress()){
             throw new SystemException(Errors.MEM_RANGE_OUT_OF_BOUND);
         }
         
@@ -156,6 +167,10 @@ public class Memory {
             
         }else{
             /* dump the first xxx words*/
+            PCB pcb = scheduler.getRunning();
+            if(pcb!=null){
+                
+            }
             int numWords = 256;
             BufferedWriter bw = null;
             StringWriter writer = new StringWriter();
@@ -206,7 +221,12 @@ public class Memory {
         READ, WRIT, DUMP
     }
     
-    public static class Block {
+    /**
+     * 
+     * @author hussachai
+     *
+     */
+    public static class Partition {
         
         private int id = 0;
         
@@ -216,7 +236,7 @@ public class Memory {
         
         private boolean free = true;
         
-        public Block(int id, int baseAddress, int boundAddress){
+        public Partition(int id, int baseAddress, int boundAddress){
             this.id = id;
             this.baseAddress = baseAddress;
             this.boundAddress = boundAddress;

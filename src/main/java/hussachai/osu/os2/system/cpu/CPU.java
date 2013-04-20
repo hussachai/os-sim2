@@ -34,7 +34,7 @@ import hussachai.osu.os2.system.Scheduler;
 import hussachai.osu.os2.system.TheSystem;
 import hussachai.osu.os2.system.error.Errors;
 import hussachai.osu.os2.system.error.SystemException;
-import hussachai.osu.os2.system.io.InputOutput;
+import hussachai.osu.os2.system.io.IOManager;
 import hussachai.osu.os2.system.storage.Memory;
 import hussachai.osu.os2.system.storage.Memory.Signal;
 import hussachai.osu.os2.system.unit.Bit;
@@ -49,10 +49,6 @@ public class CPU {
     
     /** Instruction execution time **/
     public static final int TIME_IE = 1;
-    /** I/O time **/
-    public static final int TIME_IO = 10;
-    /** Task time limit for detecting infinite loop. */
-    public static final int TIME_LIMIT = 500;
     
     /** Alias for register R0 - constant number 0*/
     public static final int R_0 = 0;
@@ -83,7 +79,8 @@ public class CPU {
     
     protected int clock = 0;
     
-    protected int inputTime = 0, outputTime = 0, execTime = 0;//TODO: must be kept in PCB or something
+    protected int idleTime = 0;
+//    protected int inputTime = 0, outputTime = 0, execTime = 0;//TODO: must be kept in PCB or something
     
     protected Bit traceSwitch = Bit.O;
     
@@ -93,7 +90,7 @@ public class CPU {
     
     protected Memory memory;
     
-    protected InputOutput io;
+    protected IOManager io;
     
     protected Scheduler scheduler;
     
@@ -117,28 +114,36 @@ public class CPU {
     /** get clock value in decimal **/
     public int getClock(){ return this.clock; }
     
-    public int getInputTime(){ return this.inputTime; }
+    public int getIdleTime(){ return this.idleTime; }
     
-    public int getOutputTime(){ return this.outputTime; }
+    /**
+     * Snapshot is the copy of some CPU registers
+     * It doesn't keep reference (pointer) to the CPU registers.
+     * So, changing the value of snapshot doesn't affect the CPU.
+     * @return
+     */
+    public CPUSnapshot createSnapshot(){
+        CPUSnapshot snapshot = new CPUSnapshot();
+        snapshot.setPC(registers[R_PC]);
+        snapshot.setIR(registers[R_IR]);
+        return snapshot;
+    }
     
     /**
      * Specification required method name.
+     * 
+     * @param pc
+     * @param traceSwitch
+     * @return true if there still have instructions to be executed
+     * otherwise false 
      */
-    public void cpu(Word pc, Bit traceSwitch){
+    public boolean cpu(Word pc, Bit traceSwitch){
         
         this.registers[R_PC] = pc;
         this.traceSwitch = traceSwitch;
         
-        while(true){
-            boolean hasNext = runCycle();
-            clock += TIME_IE;
-            execTime += TIME_IE;
-            if(execTime>=TIME_LIMIT){
-                throw new SystemException(Errors.CPU_SUSPECTED_INFINITE_JOB);
-            }
-            if(!hasNext) break;
-        }
-        
+        clock += TIME_IE;
+        return runCycle();
     }
     
     /**
@@ -146,6 +151,7 @@ public class CPU {
      */
     public void idle(){
         clock += TIME_IE;
+        idleTime += TIME_IE;
     }
     
     protected boolean runCycle(){

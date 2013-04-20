@@ -61,6 +61,12 @@ public final class Errors {
     
     public static final int PROG_MISSING_DATA_ITEMS = 513;
     
+    public static final int PROG_EXTRA_DATA_UNUSED = 514;
+    
+    public static final int PROG_MISSING_LENGTH_CHECK = 515;
+    
+    public static final int PROG_MISSING_START_ADDRESS = 516;
+    
     /* User errors */
     public static final int USR_INVALID_DATA_TYPE = 601;
     

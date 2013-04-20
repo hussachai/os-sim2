@@ -1,0 +1,15 @@
+
+At first, I would design the system to allow Loader to correct the
+number of data lines in case the data being provided are more than
+the number specified in the load module format. But, the problem was
+that Loader need to postpone memory allocation to the end of Load module
+because it will not know the number of data until it already read all data.
+This requires system to have buffer at least 128 words (equal to the largest 
+partition of memory).  But, it doesn't make sense to have that much buffer
+just to be able to fix one problem of incorrect number of data.
+ After carefully thought, I decided to treat "EXTRA DATA UNUSED" incident as error. 
+Then, I can design the buffer to be 8 words which reflect to the real system.
+
+
+
+

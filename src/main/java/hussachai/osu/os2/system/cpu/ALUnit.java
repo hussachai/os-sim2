@@ -2,6 +2,8 @@ package hussachai.osu.os2.system.cpu;
 
 import hussachai.osu.os2.system.error.Errors;
 import hussachai.osu.os2.system.error.SystemException;
+import hussachai.osu.os2.system.io.IOManager.IOType;
+import hussachai.osu.os2.system.io.InterruptException;
 import hussachai.osu.os2.system.storage.Memory;
 import hussachai.osu.os2.system.storage.Memory.Signal;
 import hussachai.osu.os2.system.unit.Bit;
@@ -104,37 +106,37 @@ public class ALUnit {
             break;
         /* Type II */
         case RD:
-            String data = cpu.io.readLine();
-            cpu.clock = cpu.clock + CPU.TIME_IO;
-            cpu.inputTime = cpu.inputTime + CPU.TIME_IO;
-            /* System supports integer type only */
-            int inputNum = 0;
-            try{
-                inputNum = Integer.parseInt(data);
-            }catch(NumberFormatException e){
-                throw new SystemException(Errors.USR_INVALID_DATA_TYPE);
-            }
-            Word.copy(Word.fromDecString(String.valueOf(
-                    Math.abs(inputNum))), targetR);
-            if(inputNum<0){
-                twosComplement(targetR);
-            }
-            break;
+              throw new InterruptException(IOType.Reader, targetR);
+//            String data = cpu.io.readLine();
+//            cpu.clock = cpu.clock + CPU.TIME_IO;
+//            cpu.inputTime = cpu.inputTime + CPU.TIME_IO;
+//            
+//            int inputNum = 0;
+//            try{
+//                inputNum = Integer.parseInt(data);
+//            }catch(NumberFormatException e){
+//                throw new SystemException(Errors.USR_INVALID_DATA_TYPE);
+//            }
+//            Word.copy(Word.fromDecString(String.valueOf(
+//                    Math.abs(inputNum))), targetR);
+//            if(inputNum<0){
+//                twosComplement(targetR);
+//            }
         case WR:
+            throw new InterruptException(IOType.Writer, targetR);
             /* System supports only integer type */
-            String output = null;
-            if(targetR.isNegativeNumber()){
-                Word.copy(targetR, tmp1);
-                twosComplement(tmp1);//convert to positive
-                output = "-"+Bit.toDecimal(tmp1.getBits());
-            }else{
-                output = String.valueOf(Bit.toDecimal(targetR.getBits()));
-            }
-            cpu.io.display(output);
-            cpu.io.getLog().info("WR value: "+output+" (decimal)");
-            cpu.clock = cpu.clock + CPU.TIME_IO;
-            cpu.outputTime = cpu.outputTime + CPU.TIME_IO;
-            break;
+//            String output = null;
+//            if(targetR.isNegativeNumber()){
+//                Word.copy(targetR, tmp1);
+//                twosComplement(tmp1);//convert to positive
+//                output = "-"+Bit.toDecimal(tmp1.getBits());
+//            }else{
+//                output = String.valueOf(Bit.toDecimal(targetR.getBits()));
+//            }
+//            cpu.io.display(output);
+//            cpu.io.getLog().info("WR value: "+output+" (decimal)");
+//            cpu.clock = cpu.clock + CPU.TIME_IO;
+//            cpu.outputTime = cpu.outputTime + CPU.TIME_IO;
         case HLT:
             return false;//stop program
         /* Type III */
