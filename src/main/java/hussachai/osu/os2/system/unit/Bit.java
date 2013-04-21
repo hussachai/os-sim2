@@ -1,6 +1,8 @@
 package hussachai.osu.os2.system.unit;
 
+import hussachai.osu.os2.system.error.Errors;
 import hussachai.osu.os2.system.error.LogicException;
+import hussachai.osu.os2.system.error.SystemException;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -40,6 +42,47 @@ public enum Bit {
     }
     
     
+    /**
+     * add dest and values and store the result in dest
+     * This method performs optional overflow checking
+     * @param dest
+     * @param values
+     */
+    public static void add(Bit dest[], Bit values[], boolean ignoreOverflow){
+        if(values.length>dest.length){
+            throw new SystemException(Errors.MEM_RANGE_OUT_OF_BOUND);
+        }
+        boolean isCarriedOver = false;
+        int diff = dest.length-values.length;
+        for(int i=dest.length-1,j=0;i>=0;i--,j++){
+            int d = dest[i].ordinal();
+            int v = (values.length>j)?values[i-diff].ordinal():0;
+            if ( (d | v) == 1){//0|1
+                if( (d & v) == 1){//1&1
+                    if(isCarriedOver){ dest[i] = Bit.I;
+                    }else{ dest[i] = Bit.O; }
+                    isCarriedOver = true;
+                }else{//01
+                    if(isCarriedOver){
+                        dest[i] = Bit.O;
+                        isCarriedOver = true;
+                    }else{
+                        dest[i] = Bit.I;
+                        isCarriedOver = false;
+                    }
+                }
+            }else{
+                if(isCarriedOver){
+                    dest[i] = Bit.I;
+                    isCarriedOver = false;
+                }
+            }
+        }
+        
+        if(!ignoreOverflow && isCarriedOver){
+            throw new SystemException(Errors.CPU_ARITHMETIC_OVERFLOW);
+        }
+    }
     
     /**
      * convert integer to Bit

@@ -38,6 +38,7 @@ import hussachai.osu.os2.system.io.IOManager;
 import hussachai.osu.os2.system.storage.Memory;
 import hussachai.osu.os2.system.storage.Memory.Signal;
 import hussachai.osu.os2.system.unit.Bit;
+import hussachai.osu.os2.system.unit.ID;
 import hussachai.osu.os2.system.unit.Word;
 
 /**
@@ -49,6 +50,8 @@ public class CPU {
     
     /** Instruction execution time **/
     public static final int TIME_IE = 1;
+    
+    public static final int REGISTER_NUMBERS = 10;
     
     /** Alias for register R0 - constant number 0*/
     public static final int R_0 = 0;
@@ -69,7 +72,7 @@ public class CPU {
     public static final int R_TMP3 = 8;
     public static final int R_TMP4 = 9;
     
-    protected Word registers[] = new Word[10];
+    protected Word registers[] = new Word[REGISTER_NUMBERS];
     
     /** Memory address register (MAR) */
     protected Word mar = new Word();
@@ -94,18 +97,17 @@ public class CPU {
     
     protected Scheduler scheduler;
     
-    public CPU(TheSystem system){
-        
-        this.memory = system.getMemory();
-        this.io = system.getIO();
-        this.scheduler = system.getScheduler();
-        
+    public void init(TheSystem system){
         //allocate space for register
         for(int i=0; i<registers.length;i++){
             registers[i] = new Word();
         }
         registers[0].getBits()[Word.SIZE-1] = Bit.O;
         registers[1].getBits()[Word.SIZE-1] = Bit.I;
+        
+        this.memory = system.getMemory();
+        this.io = system.getIO();
+        this.scheduler = system.getScheduler();
         
         controlUnit = new ControlUnit(this);
         alUnit = new ALUnit(this);
@@ -122,11 +124,26 @@ public class CPU {
      * So, changing the value of snapshot doesn't affect the CPU.
      * @return
      */
-    public CPUSnapshot createSnapshot(){
-        CPUSnapshot snapshot = new CPUSnapshot();
-        snapshot.setPC(registers[R_PC]);
-        snapshot.setIR(registers[R_IR]);
-        return snapshot;
+    public Word[] createSnapshot(){
+        Word copiedRegisters[] = new Word[REGISTER_NUMBERS]; 
+        for(int i=0;i<REGISTER_NUMBERS;i++){
+            copiedRegisters[i] = new Word();
+            Word.copy(registers[i], copiedRegisters[i]);
+        }
+        return copiedRegisters;
+    }
+    
+    /**
+     * Restore the CPU registers from snapshot
+     * @param registers
+     */
+    public void restoreCPU(Word copiedRegisters[]){
+        if(copiedRegisters==null){
+            return;
+        }
+        for(int i=0;i<REGISTER_NUMBERS;i++){
+            Word.copy(copiedRegisters[i], registers[i]);
+        }
     }
     
     /**
@@ -172,6 +189,8 @@ public class CPU {
         Word ea = null;
         String traceInfo = null;
         
+        ID jobID = scheduler.getRunning().getJobID();
+        
         if(traceSwitch==Bit.I){
             
             Bit rBit = instruction.getBits()[4];
@@ -211,7 +230,7 @@ public class CPU {
                 traceInfo += traceEmpty();
             }
             
-            io.getLog().trace(traceInfo);
+            io.getLog().trace(jobID, traceInfo);
         }
         
         return hasNext;
@@ -224,7 +243,7 @@ public class CPU {
     protected void incrementPC(){
         Bit bits[] = registers[CPU.R_PC].getBits();
         Bit firstBit = bits[0];
-        registers[CPU.R_PC].increment();
+        Word.increment(registers[CPU.R_PC]);
         if(firstBit==Bit.I && bits[0]==Bit.O){
             throw new SystemException(Errors.MEM_PC_OVERFLOW);
         }

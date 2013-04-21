@@ -37,10 +37,10 @@ public class ALUnitTest {
     public void testClearBits(){
         Word zeroes = Word.fromBinString("000000000000");
         Word word = Word.fromBinString("111111111111");
-        alUnit.clear(word);
+        Word.clear(word);
         Assert.assertTrue(Arrays.equals(zeroes.getBits(), word.getBits()));
         word = Word.fromBinString("010101010101");
-        alUnit.clear(word);
+        Word.clear(word);
         Assert.assertTrue(Arrays.equals(zeroes.getBits(), word.getBits()));
     }
     
@@ -50,21 +50,21 @@ public class ALUnitTest {
     public void testIncrement(){
         /* test incrementing from 1 to 4 */
         Word word = Word.fromBinString("000000000001");
-        alUnit.increment(word);
+        Word.increment(word);
         Assert.assertTrue(Arrays.equals(new Bit[]{O,O,O,O,O,O,O,O,O,O,I,O}, word.getBits()));
-        alUnit.increment(word);
-        alUnit.increment(word);
+        Word.increment(word);
+        Word.increment(word);
         Assert.assertTrue(Arrays.equals(new Bit[]{O,O,O,O,O,O,O,O,O,I,O,O}, word.getBits()));
         
         /* test incrementing on negative number */
         word = Word.fromBinString("111111111101");//-3
-        alUnit.increment(word);
+        Word.increment(word);
         Assert.assertTrue(Arrays.equals(new Bit[]{I,I,I,I,I,I,I,I,I,I,I,O}, word.getBits()));//-2
-        alUnit.increment(word);
+        Word.increment(word);
         Assert.assertTrue(Arrays.equals(new Bit[]{I,I,I,I,I,I,I,I,I,I,I,I}, word.getBits()));//-1
-        alUnit.increment(word);
+        Word.increment(word);
         Assert.assertTrue(Arrays.equals(new Bit[]{O,O,O,O,O,O,O,O,O,O,O,O}, word.getBits()));//0
-        alUnit.increment(word);
+        Word.increment(word);
         Assert.assertTrue(Arrays.equals(new Bit[]{O,O,O,O,O,O,O,O,O,O,O,I}, word.getBits()));//1
         
     }
@@ -94,7 +94,7 @@ public class ALUnitTest {
     @Test
     public void testTwosComplement(){
         Word word = Word.fromBinString("111111101110");
-        alUnit.twosComplement(word);
+        Word.twosComplement(word);
         System.out.println(Bit.toDecimal(word.getBits()));
     }
     
@@ -104,12 +104,11 @@ public class ALUnitTest {
         Bit one[] = Word.fromBinString("1").getBits();
         Bit value1[] = Word.fromDecString("15").getBits();
         Bit value2[] = Word.fromDecString("23").getBits();
-        alUnit.add(value1, value2, false);
+        Bit.add(value1, value2, false);
         Assert.assertTrue(Arrays.equals(Word.fromDecString("38").getBits(), value1));
         
         value1 = Word.fromBinString("011111111111").getBits();
-        alUnit.add(value1, one, false);
+        Bit.add(value1, one, false);
     }
-    
     
 }

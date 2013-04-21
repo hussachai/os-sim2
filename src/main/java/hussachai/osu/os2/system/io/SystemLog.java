@@ -2,10 +2,12 @@ package hussachai.osu.os2.system.io;
 
 import hussachai.osu.os2.system.error.Errors;
 import hussachai.osu.os2.system.error.SystemException;
+import hussachai.osu.os2.system.unit.ID;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.text.MessageFormat;
 
 /**
  * The logical device for handling system log
@@ -18,7 +20,7 @@ public class SystemLog {
     
     public static final String SYSTEM_LOG = "system.log";
     
-    public static final String TRACE_LOG = "trace.log";
+    public static final String TRACE_LOG = "trace-{0}.log";
     
     /** platform independent new line characters */
     private String newLine = System.getProperty("line.separator");
@@ -31,12 +33,16 @@ public class SystemLog {
         write(SYSTEM_LOG, data, true);
     }
     
-    public void clearTrace(){
-        write(TRACE_LOG, null, false);
+    public void clearTrace(ID jobID){
+        String fileName = MessageFormat.format(
+                TRACE_LOG, jobID.toString());
+        write(fileName, null, false);
     }
     
-    public void trace(String data){
-        write(TRACE_LOG, data, true);
+    public void trace(ID jobID, String data){
+        String fileName = MessageFormat.format(
+                TRACE_LOG, jobID.toString());
+        write(fileName, data, true);
     }
     
     private void write(String fileName, String data, boolean append){

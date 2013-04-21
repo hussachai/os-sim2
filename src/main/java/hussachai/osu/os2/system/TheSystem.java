@@ -25,6 +25,7 @@
 package hussachai.osu.os2.system;
 
 import hussachai.osu.os2.system.Loader.Context;
+import hussachai.osu.os2.system.Loader.EndOfBatchException;
 import hussachai.osu.os2.system.Loader.MemoryNotAvailableException;
 import hussachai.osu.os2.system.cpu.CPU;
 import hussachai.osu.os2.system.error.ErrorHandler;
@@ -32,13 +33,9 @@ import hussachai.osu.os2.system.error.Errors;
 import hussachai.osu.os2.system.error.SystemException;
 import hussachai.osu.os2.system.io.IOManager;
 import hussachai.osu.os2.system.storage.Memory;
-import hussachai.osu.os2.system.unit.Bit;
 import hussachai.osu.os2.system.unit.ID;
-import hussachai.osu.os2.system.unit.Word;
-import hussachai.osu.os2.system.util.TraceFormatter;
 
 import java.io.File;
-import java.math.BigInteger;
 
 /**
  * The system is the main entry of the simulation
@@ -47,31 +44,29 @@ import java.math.BigInteger;
  */
 public class TheSystem {
     
-    private ID jobIDGenerator;
+    private ID jobIDGenerator = new ID();
     
-    private CPU cpu;
+    private Loader loader = new Loader();
     
-    private Memory memory;
+    private CPU cpu = new CPU();
     
-    private Loader loader;
+    private Memory memory = new Memory();
     
-    private Scheduler scheduler;
+    private Scheduler scheduler = new Scheduler();
     
-    private IOManager io;
+    private IOManager io = new IOManager();
     
-    private ErrorHandler errorHandler;
+    private ErrorHandler errorHandler = new ErrorHandler();
     
-    public TheSystem(){
-        jobIDGenerator = new ID();
-        io = new IOManager();
-        memory = new Memory(this);
-        cpu = new CPU(this);
-        loader = new Loader(this);
-        scheduler = new Scheduler(this);
-        errorHandler = new ErrorHandler(this);
-    }
+    public TheSystem(){}
     
     public void start(String fileName){
+        
+        loader.init(this);
+        cpu.init(this);
+        memory.init(this);
+        scheduler.init(this);
+        errorHandler.init(this);
         
         File file = new File(fileName);
         if(!file.exists()){
@@ -81,44 +76,40 @@ public class TheSystem {
         io.getLog().clearInfo();
         
         try{
-            
             while(true){
-                ID jobID = null;
-                Context context = new Context();
-                try{
-                    
-                    loader.loader(file, context);
-                    
-                    jobID = jobIDGenerator.nextSequence();
-                    
-                    scheduler.initiate(context, jobID);
-                    
-                    break;
-                }catch(MemoryNotAvailableException e){
-                    break;
-                }catch(Exception e){
-                    jobID = jobIDGenerator.nextSequence();
-                    //TODO: print error
+                while(true){
+                    ID jobID = null;
+                    Context context = new Context();
+                    try{
+                        
+                        loader.loader(file, context);
+                        
+                        jobID = jobIDGenerator.nextSequence();
+                        
+                        scheduler.initiate(context, jobID);
+                        
+                        break;
+                    }catch(MemoryNotAvailableException e){
+                        break;
+                    }catch(EndOfBatchException e){
+                        if(scheduler.isFinished()){
+//                            memory.debug();
+                            throw e;
+                        }
+                        break;
+                    }catch(Exception e){
+                        e.printStackTrace();
+                        jobID = jobIDGenerator.nextSequence();
+                        //TODO: print error
+                    }
                 }
+                
+                scheduler.controlTraffic();
             }
             
-            scheduler.controlTraffic();
-            
-            
-//            io.getLog().info("Cumulative Job ID: "+jobID+" (hex)");
-//            
-//            /* assign the last instruction word as start address word*/ 
-//            Word pc = context.getStartAddress();
-//            
-//            if(context.getTraceSwitch()==Bit.I){
-//                io.getLog().clearTrace();
-//                /* write trace header */
-//                io.getLog().trace("   Trace data in hex format");
-//                io.getLog().trace(TraceFormatter.getTraceHeader());
-//            }
-            
-        }catch(Loader.EndOfBatchException e){
+        }catch(EndOfBatchException e){
             //TODO: print statistic report here
+            System.out.println("END OF BATCH");
         }finally{
             
 //            String clockHex = new BigInteger(String.valueOf(
@@ -146,6 +137,10 @@ public class TheSystem {
     /** entry point **/
     public static void main(String[] args) {
         
+        if(args.length==0){
+            System.out.println("Missing file argument");
+            return;
+        }
         TheSystem system = new TheSystem();
         IOManager io = system.getIO();
         
@@ -153,8 +148,10 @@ public class TheSystem {
             system.start(args[0]);
             io.getLog().info("Terminated successfully.");
         }catch(SystemException e){
+            e.printStackTrace();
             system.errorHandler.errorHandler(e.getErrorCode());
         }catch(Throwable e){
+            e.printStackTrace();
             system.errorHandler.errorHandler(Errors.SYS_INTERNAL_ERROR);
         }
     }

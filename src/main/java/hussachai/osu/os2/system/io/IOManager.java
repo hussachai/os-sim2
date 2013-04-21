@@ -1,5 +1,9 @@
 package hussachai.osu.os2.system.io;
 
+import hussachai.osu.os2.system.io.IOHandlers.StandardInputHandler;
+import hussachai.osu.os2.system.io.IOHandlers.StandardOutputHandler;
+import hussachai.osu.os2.system.unit.Word;
+
 /**
  * I/O object registry
  * 
@@ -14,36 +18,39 @@ public class IOManager {
     /** I/O time **/
     public static final int TIME_IO = 10;
     
-    private SystemLog log = new SystemLog();
+    private SystemLog log;
     
-    private StdOutput output;
+    private StandardInputHandler stdInputHandler;
     
-    private StdInput input;
+    private StandardOutputHandler stdOutputHandler;
+    
+    public IOManager(){
+        log = new SystemLog();
+        stdInputHandler = new StandardInputHandler();
+        stdOutputHandler = new StandardOutputHandler();
+    }
     
     public SystemLog getLog(){
         return log;
     }
     
-    public void write(String data) {
-        output.write(data);
-    }
-    
-    public String read() {
+    public Word read(IOHandlers.Input input){
+        if(input==null){
+            return stdInputHandler.read();
+        }
         return input.read();
     }
     
+    public void write(IOHandlers.Output output, Word data){
+        if(output==null){
+            stdOutputHandler.write(data);
+        }else{
+            output.write(data);
+        }
+    }
+    
     public static enum IOType {
-        Reader, Writer
+        Read, Write
     }
-    
-    public static interface StdInput {
-        public String read();
-    }
-    
-    public static interface StdOutput {
-        public void write(String data);
-    }
-    
-    
     
 }

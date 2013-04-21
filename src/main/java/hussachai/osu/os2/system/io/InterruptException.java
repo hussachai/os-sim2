@@ -18,7 +18,13 @@ public class InterruptException extends RuntimeException {
      */
     public InterruptException(IOType ioType, Word targetRegister){
         this.ioType = ioType;
-        this.targetRegister = targetRegister;
+        if(ioType==IOType.Read){
+            this.targetRegister = targetRegister;            
+        }else{
+            Word word = new Word();
+            Word.copy(targetRegister, word);
+            this.targetRegister = word;
+        }
     }
     
     public IOType getIOType() {

@@ -51,21 +51,13 @@ public class ID extends Word {
         ID id = new ID(true);
         /* Actually, the synchronized doesn't need in this system */
         synchronized(sequence){
-            sequence.increment();
+            Word.increment(sequence);
             Word.copy(sequence, id);
         }
         id.modifiable = false;
         return id;
     }
     
-    @Override
-    public void increment() {
-        if(modifiable){
-            super.increment();
-        }else{
-            throw new LogicException("Modification is not allowed");
-        }
-    }
     
     @Override
     public Bit[] getBits() {

@@ -24,7 +24,7 @@ public class Loader {
     /* Keep tracking last position file has been read */
     private long lastFilePointer = 0;
     
-    public Loader(TheSystem system){
+    public void init(TheSystem system){
         this.buffer = new Buffer(8);
         this.memory = system.getMemory();
     }
@@ -353,7 +353,14 @@ public class Loader {
         }
     }
     
-    public static class EndOfBatchException extends RuntimeException {
+    /**
+     * This class is used as a signal for terminating the batch 
+     * when there's no more to read.
+     * 
+     * @author hussachai
+     *
+     */
+    public class EndOfBatchException extends RuntimeException {
         private static final long serialVersionUID = 1L;
     }
     
@@ -364,7 +371,8 @@ public class Loader {
     public static void main(String[] args) {
         Context context = new Context();
         try{
-        Loader loader = new Loader(new TheSystem());
+        Loader loader = new Loader();
+        loader.init(new TheSystem());
 //        for(int i=0;i<3;i++){
 //            while((context=loader.loader(new File("programs/tb")))!=null){
                 loader.loader(new File("programs/tb"), context);

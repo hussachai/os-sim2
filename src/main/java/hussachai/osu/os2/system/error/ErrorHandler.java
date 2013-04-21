@@ -39,7 +39,7 @@ public class ErrorHandler {
     private IOManager io;
     private Memory memory;
     
-    public ErrorHandler(TheSystem system){
+    public void init(TheSystem system){
         
         this.io = system.getIO();
         this.memory = system.getMemory();

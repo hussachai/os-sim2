@@ -20,14 +20,6 @@ public class IDTest {
                     .equals(e.getMessage()));
         }
         
-        try{
-            idGenerator.increment();
-            Assert.fail("ID must be unmodifiable");
-        }catch(LogicException e){
-            Assert.assertTrue("Modification is not allowed"
-                    .equals(e.getMessage()));
-        }
-        
         ID id = null;
         for(int i=1;i<10;i++){
             id = idGenerator.nextSequence();
@@ -36,14 +28,6 @@ public class IDTest {
         
         id = idGenerator.nextSequence();
         Assert.assertTrue(id.toDecimal()==10);
-        
-        try{
-            id.increment();
-            Assert.fail("ID must be unmodifiable");
-        }catch(LogicException e){
-            Assert.assertTrue("Modification is not allowed"
-                    .equals(e.getMessage()));
-        }
         
         try{
             id.nextSequence();

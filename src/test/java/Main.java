@@ -12,8 +12,16 @@ public class Main {
     
     public static void main(String[] args) {
         args = new String[]{
-            "programs/sum-of-sequence.hex"
-//          "programs/error-test/infinite-loop.hex"
+                "programs/custom/inc"
+//            "programs/single/sum-of-seq"
+//            "programs/single/add-two-numbers"
+//                "programs/single/exponent"
+//              "programs/custom/repeat_small"
+//              "programs/custom/repeat_medium"
+//            "programs/custom/repeat_mixed_small_medium"
+//                "programs/custom/inc"
+//            "programs/tb"
+//               "programs/tb-custom"
         };
         TheSystem.main(args);
     }

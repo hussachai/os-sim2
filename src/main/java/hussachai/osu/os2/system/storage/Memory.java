@@ -62,9 +62,8 @@ public class Memory {
     
     private Scheduler scheduler;
     
-    public Memory(TheSystem system){
-        this.io = system.getIO();
-        this.scheduler = system.getScheduler();
+    public void init(TheSystem system){
+        
         for(int i=0; i<MEMORY_SIZE;i++){
             addresses[i] = new Word();
         }
@@ -76,8 +75,16 @@ public class Memory {
         partitions[4] = new Partition(4, 192, 255);//64 words
         partitions[5] = new Partition(5, 256, 383);//128 words
         partitions[6] = new Partition(6, 384, 511);//128 words
+        
+        this.io = system.getIO();
+        this.scheduler = system.getScheduler();
     }
     
+//    public void debug(){
+//        for(int i=0;i<MEMORY_SIZE;i++){
+//            System.out.println("["+i+"]"+addresses[i]);
+//        }
+//    }
     /**
      * Try to allocate available partition based on the best fit policy.
      * If the allocation is success, the allocate method will return
@@ -107,7 +114,7 @@ public class Memory {
         if(partition==null) return;
         partition.free = true;
         /* clear memory */
-        for(int i=partition.baseAddress;i<=partition.boundAddress;i++){
+        for(int i=0;i<partition.getSize();i++){
             memory(partition, Signal.WRIT, i, new Word());
         }
     }
@@ -139,6 +146,7 @@ public class Memory {
      * No process is related to that action; so, Loader must not call this function
      * instead of the overload one.  
      * 
+     * @param partition
      * @param signal
      * @param memoryIdx
      * @param variable
