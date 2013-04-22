@@ -1,4 +1,4 @@
-package hussachai.osu.os2.system;
+package hussachai.osu.os2.system.scheduler;
 
 import hussachai.osu.os2.system.io.IOHandlers;
 import hussachai.osu.os2.system.io.IOManager.IOType;
@@ -98,12 +98,19 @@ public class PCB implements Comparable<PCB>{
     public ID getJobID(){ return jobID; }
     public Word[] getRegisters(){ return registers; }
     public int getCreatedTime(){ return createdTime; }
-    public int getCpuUsageTime(){ return cpuUsageTime; }
-    public int getIoUsageTime(){ return ioUsageTime; }
-    public int getRemainingQuantum(){ return remainingQuantum; }
+    public int getCPUUsageTime(){ return cpuUsageTime; }
+    public int getIOUsageTime(){ return ioUsageTime; }
     public Partition getPartition(){ return partition; }
+    public int getLength(){ return length; }
+    public int getDataLines(){ return dataLines; }
+    public int getOutputLines(){ return outputLines; }
+    public int getReaderIndex(){ return readerIndex; }
+    public int getWriterIndex(){ return writerIndex; }
     
-    /** The occupied space in the allocated partition. */
+    /** 
+     * The occupied space in the allocated partition.
+     * The result is in the number of Words 
+     * */
     public int getOccupiedSpace(){ 
         return length+dataLines+outputLines; 
     } 

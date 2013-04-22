@@ -1,4 +1,5 @@
-package hussachai.osu.os2.system;
+package hussachai.osu.os2.system.loader;
+import hussachai.osu.os2.system.TheSystem;
 import hussachai.osu.os2.system.error.Errors;
 import hussachai.osu.os2.system.error.SystemException;
 import hussachai.osu.os2.system.storage.Buffer;
@@ -63,6 +64,9 @@ public class Loader {
                 
                 if(done){
                     this.lastFilePointer = dataInput.getFilePointer();
+                    if(context.length < context.actualLength){
+                        throw new SystemException(Errors.MEM_INCORRECT_RESERVED_SIZE);
+                    }
                     /* validate # of data */
                     if(context.dataLines < context.dataCount){
                         throw new SystemException(Errors.PROG_EXTRA_DATA_UNUSED);
@@ -80,9 +84,24 @@ public class Loader {
             if( (!done) && data==null) throw new EndOfBatchException();
             
         }catch(Exception e){
+            
             memory.deallocate(context.partition);
+            
+            /* Move file cursor to the next job */
+            String data = null;
+            try{
+                while( (data = dataInput.readLine()) !=null){
+                    System.out.println(data);
+                    if("".equals(data.trim())){
+                        this.lastFilePointer = dataInput.getFilePointer();
+                        break;
+                    }
+                }
+            }catch(Exception e2){ throw new SystemException(e); }
+            
             if(e instanceof RuntimeException) throw (RuntimeException)e;
             throw new SystemException(e);
+            
         }finally{
             try{
                 if(dataInput!=null) dataInput.close(); 
@@ -127,7 +146,10 @@ public class Loader {
                     if(context.lastPart==ModulePart.DATA
                             && context.dataLines>0){
                         throw new SystemException(Errors.PROG_MISSING_DATA_ITEMS);
-                    }else if(context.lastPart!=ModulePart.DATA_PAYLOAD){
+                    }else if(
+                            (context.lastPart!=ModulePart.DATA_PAYLOAD) &&
+                            !(context.lastPart==ModulePart.DATA && context.dataLines==0)
+                            ){
                         throw new SystemException(Errors.PROG_MISSING_DATA_RECORD);
                     }
                     context.visit(ModulePart.END);
@@ -200,6 +222,7 @@ public class Loader {
                 String wordStr = null;
                 for(int i=0; i<data.length();i+=3){
                     wordStr = data.substring(i, i+3);
+                    context.actualLength++;
                     context.instruction = Word.fromHexString(wordStr);
                     buffer.add(context.instruction);
                     if(buffer.isFull()){
@@ -275,48 +298,52 @@ public class Loader {
     public static class Context {
         
         /** Allocated partition of memory */
-        private Partition partition;
+        protected Partition partition;
         
         /** Virtual memory address*/
-        private int memoryIndex = 0;
+        protected int memoryIndex = 0;
         
-        private boolean visitedParts[] = new boolean[ModulePart.values().length];
+        protected boolean visitedParts[] = new boolean[ModulePart.values().length];
         /**
          * The last encounter part. Loader uses this value
          * to validate the sequence of command.
          */
-        private ModulePart lastPart = null;
+        protected ModulePart lastPart = null;
         
         /**
          * This value is used for validating the actual number of data 
          * with the specified number of data
          */
-        private int dataCount = 0;
+        protected int dataCount = 0;
         /** 
          * Number of data lines in job.
          * This is the expected number not actual number 
          * */
-        private int dataLines = -1;
+        protected int dataLines = -1;
         
         /** 
          * Number of output lines in job
          * This is the expected number not actual number 
          * */
-        private int outputLines = -1;
+        protected int outputLines = -1;
         
-        private Bit traceSwitch = null;
+        protected Bit traceSwitch = null;
         
         /** 
          * Check length for validating actual number of instruction
          * in the other hand, it's expected number of instructions 
          * */
-        private int length = -1;
-        
+        protected int length = -1;
+        /**
+         * This is the actual number of instruction. It's used for
+         * validating program.
+         */
+        protected int actualLength = 0;
         /** Hold the last instruction word */
-        private Word instruction;
+        protected Word instruction;
         
         /** Hold the start address which will be used as PC */
-        private Word startAddress;
+        protected Word startAddress;
         
         public Partition getPartition(){ return partition; }
         public int getDataLines(){ return dataLines; }
@@ -336,21 +363,6 @@ public class Loader {
             return this.visitedParts[modulePart.ordinal()];
         }
         
-        void clear(){
-            partition = null;
-            memoryIndex = 0;
-            for(int i=0;i<visitedParts.length;i++){
-                visitedParts[i] = false;
-            }
-            lastPart = null;
-            dataCount = 0;
-            dataLines = -1;
-            outputLines = -1;
-            traceSwitch= null;
-            length = -1;
-            instruction = null;
-            startAddress = null;
-        }
     }
     
     /**
@@ -368,26 +380,4 @@ public class Loader {
         private static final long serialVersionUID = 1L;
     }
     
-    public static void main(String[] args) {
-        Context context = new Context();
-        try{
-        Loader loader = new Loader();
-        loader.init(new TheSystem());
-//        for(int i=0;i<3;i++){
-//            while((context=loader.loader(new File("programs/tb")))!=null){
-                loader.loader(new File("programs/tb"), context);
-                System.out.println("Part:"+context.lastPart);
-                System.out.println("DataLines:"+context.dataLines);
-                System.out.println("OutputLines:"+context.outputLines);
-                System.out.println("TraceSwitch:"+context.traceSwitch);
-                System.out.println("Length:"+context.length);
-                System.out.println("LastInstruction:"+context.instruction);
-                System.out.println("StartAddress:"+context.startAddress.toBinString());
-//            }
-//        }
-        }catch(Exception e){
-            System.out.println(e);
-            e.printStackTrace();
-        }
-    }
 }

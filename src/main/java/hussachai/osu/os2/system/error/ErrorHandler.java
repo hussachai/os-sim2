@@ -20,7 +20,6 @@ package hussachai.osu.os2.system.error;
 
 import hussachai.osu.os2.system.TheSystem;
 import hussachai.osu.os2.system.io.IOManager;
-import hussachai.osu.os2.system.storage.Memory;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -37,12 +36,10 @@ public class ErrorHandler {
     private Properties errors = new Properties();
     
     private IOManager io;
-    private Memory memory;
     
     public void init(TheSystem system){
         
         this.io = system.getIO();
-        this.memory = system.getMemory();
         
         InputStream in = null;
         try{
@@ -62,14 +59,19 @@ public class ErrorHandler {
      * Specification required method.
      * @param errorNumber
      */
-    public void errorHandler(int errorNumber){
-        String message = errors.getProperty(String.valueOf(errorNumber));
-        io.getLog().info("Terminated with error no. "+errorNumber);
+    public void errorHandler(Exception e){
+        String message = null;
+        int errorNumber = Errors.SYS_INTERNAL_ERROR;
+        if(e instanceof SystemException){
+            errorNumber = ((SystemException)e).getErrorCode();
+            message = errors.getProperty(String.valueOf(errorNumber));
+        }else{
+            message = e.getMessage();
+        }
+        
+        io.getLog().info("[Terminated with error no. "+errorNumber+"]");
         io.getLog().info("Description: "+message);
-        
-        //TODO: 
-//        memory.memory(Signal.DUMP, 0, null);
-        
+        io.getLog().info("\n");
     }
     
 }

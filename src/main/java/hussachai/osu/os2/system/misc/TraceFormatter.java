@@ -1,7 +1,4 @@
-package hussachai.osu.os2.system.util;
-
-import hussachai.osu.os2.system.unit.Bit;
-import hussachai.osu.os2.system.unit.Word;
+package hussachai.osu.os2.system.misc;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -36,20 +33,20 @@ public class TraceFormatter {
     
     /**
      * Convert word array into string with perfect alignment.  
-     * @param words
+     * @param data
      * @return
      */
-    public static String trace(Word... words){
-        if(words==null){
+    public static String trace(Object... data){
+        if(data==null){
             return traceEmpty();
         }
         StringBuilder str = new StringBuilder();
-        for(Word word: words){
-            if(word==null){
+        for(Object o: data){
+            if(o==null){
                 str.append(traceEmpty());
             }else{
-                str.append(StringUtils.center(StringUtils.leftPad(
-                        Bit.toHexString(word.getBits()), 3, '0'), PAD_SIZE, PAD_CHAR));
+                str.append(StringUtils.center(
+                        o.toString(), PAD_SIZE, PAD_CHAR));
             }
         }
         return str.toString();

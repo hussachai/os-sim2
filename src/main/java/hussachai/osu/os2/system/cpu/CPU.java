@@ -28,13 +28,13 @@
  */
 package hussachai.osu.os2.system.cpu;
 
-import static hussachai.osu.os2.system.util.TraceFormatter.trace;
-import static hussachai.osu.os2.system.util.TraceFormatter.traceEmpty;
-import hussachai.osu.os2.system.Scheduler;
+import static hussachai.osu.os2.system.misc.TraceFormatter.trace;
+import static hussachai.osu.os2.system.misc.TraceFormatter.traceEmpty;
 import hussachai.osu.os2.system.TheSystem;
 import hussachai.osu.os2.system.error.Errors;
 import hussachai.osu.os2.system.error.SystemException;
 import hussachai.osu.os2.system.io.IOManager;
+import hussachai.osu.os2.system.scheduler.Scheduler;
 import hussachai.osu.os2.system.storage.Memory;
 import hussachai.osu.os2.system.storage.Memory.Signal;
 import hussachai.osu.os2.system.unit.Bit;
@@ -194,9 +194,16 @@ public class CPU {
         if(traceSwitch==Bit.I){
             
             Bit rBit = instruction.getBits()[4];
-            targetR = (rBit==Bit.I)?registers[R_IDX]:registers[R_ACC];
+            String labelR = null;
+            if(rBit==Bit.I){
+                targetR = registers[R_IDX];
+                labelR = "004";
+            }else{
+                targetR = registers[R_ACC];
+                labelR = "005";
+            }
             ea = (opCode.getType()==1)?this.mar:null;
-            traceInfo = trace(pc, instruction, targetR);
+            traceInfo = trace(pc, instruction, labelR);
             
             if(ea!=null){
                 memory.memory(Signal.READ, ea, tmp2);
@@ -205,8 +212,7 @@ public class CPU {
                 traceInfo += traceEmpty();
             }
             
-            memory.memory(Signal.READ, targetR, tmp1);
-            
+            Word.copy(targetR, tmp1);
             traceInfo += trace(tmp1);
             if(ea!=null){
                 traceInfo += trace(tmp2);
@@ -221,7 +227,7 @@ public class CPU {
         hasNext = alUnit.execute(opCode);
         
         if(traceSwitch==Bit.I){
-            memory.memory(Signal.READ, targetR, tmp1);
+            Word.copy(targetR, tmp1);
             traceInfo += trace(tmp1);
             if(ea!=null){
                 memory.memory(Signal.READ, ea, tmp2);

@@ -322,6 +322,16 @@ public class Word {
     
     /**
      * 
+     * @param decStr
+     * @return
+     */
+    public static Word fromDecimal(int value){
+        
+        return new Word(Bit.fromDecString(String.valueOf(value), SIZE));
+    }
+    
+    /**
+     * 
      * @param hexStr
      * @return
      */
@@ -330,7 +340,7 @@ public class Word {
         return new Word(Bit.fromHexString(hexStr, SIZE));
     }
     
-    
+//    public static Word fromDecimal()
     /**
      * @param src
      * @param dest

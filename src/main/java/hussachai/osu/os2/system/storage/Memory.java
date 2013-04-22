@@ -18,19 +18,18 @@
  */
 package hussachai.osu.os2.system.storage;
 
-import hussachai.osu.os2.system.PCB;
-import hussachai.osu.os2.system.Scheduler;
 import hussachai.osu.os2.system.TheSystem;
 import hussachai.osu.os2.system.error.Errors;
 import hussachai.osu.os2.system.error.LogicException;
 import hussachai.osu.os2.system.error.SystemException;
 import hussachai.osu.os2.system.io.IOManager;
+import hussachai.osu.os2.system.scheduler.PCB;
+import hussachai.osu.os2.system.scheduler.Scheduler;
 import hussachai.osu.os2.system.unit.Bit;
 import hussachai.osu.os2.system.unit.Word;
 
 import java.io.BufferedWriter;
 import java.io.StringWriter;
-import java.math.BigInteger;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -131,11 +130,11 @@ public class Memory {
     public void memory(Signal signal, Word memoryAddr, Word variable){
         int memoryIdx = Bit.toDecimal(memoryAddr.getBits());
         
-        if(scheduler.getRunning()==null){
+        PCB pcb = scheduler.getRunning();
+        
+        if(pcb==null){
             throw new LogicException("Accessing memory by non process!!!");
         }
-        
-        PCB pcb = scheduler.getRunning();
         
         memory(pcb.getPartition(), signal, memoryIdx, variable);
     }
@@ -148,7 +147,7 @@ public class Memory {
      * 
      * @param partition
      * @param signal
-     * @param memoryIdx
+     * @param memoryIdx - This value will be occupied space for DUMP operation
      * @param variable
      */
     public void memory(Partition partition, Signal signal, int memoryIdx, Word variable){
@@ -175,24 +174,22 @@ public class Memory {
             
         }else{
             /* dump the first xxx words*/
-            PCB pcb = scheduler.getRunning();
-            if(pcb!=null){
-                
-            }
-            int numWords = 256;
+            int startAddr = partition.getBaseAddress();
+            int numWords = memoryIdx;
             BufferedWriter bw = null;
             StringWriter writer = new StringWriter();
             try{
                 bw = new BufferedWriter(writer);
-                bw.append("0000\t");
-                for(int i=0,j=1; i<numWords; i++,j++){
-                    String hexValue = Bit.toHexString(addresses[i].getBits());
+                bw.append("0").append(Word.fromDecimal(startAddr)
+                        .toString()).append("\t");
+                for(int i=startAddr,j=1; i<numWords; i++,j++){
+                    String hexValue = Bit.toHexString(
+                            addresses[i].getBits()).toUpperCase();
                     bw.append(StringUtils.leftPad(hexValue, 3, '0'));
                     if(j%8==0 && i< numWords-1){
-                        String lineNumHex = new BigInteger(
-                                String.valueOf(j), 10).toString(16);
                         bw.newLine();
-                        bw.append(StringUtils.leftPad(lineNumHex, 4, '0'));
+                        bw.append("0").append(
+                                Word.fromDecimal(j).toString());
                     }
                     bw.append("\t");
                 }
@@ -203,7 +200,8 @@ public class Memory {
                     try{ bw.close(); }catch(Exception e){}
                 }
             }
-            io.getLog().info("DUMP Memory[0-255] in hex:");
+            io.getLog().info("DUMP Memory["+startAddr+
+                    "-"+numWords+"] in hex:");
             io.getLog().info(writer.toString());
         }
     }

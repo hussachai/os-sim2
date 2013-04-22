@@ -10,6 +10,80 @@ just to be able to fix one problem of incorrect number of data.
  After carefully thought, I decided to treat "EXTRA DATA UNUSED" incident as error. 
 Then, I can design the buffer to be 8 words which reflect to the real system.
 
+This simulation program runs quite slow because all operations relating to 
+CPU calculation are implemented as simulated bitwise operation.
+And that is not the real bitwise operation that underlying machine does but 
+So, all bits are manipulated the same way as the system does with the actual bits
+in underlying machine.   
+
+Note that: This system uses Word (12 bits) as the basic addressing unit.
+The left most significant bit is the sign bit for 2's complement computation.
+Thus, the maximum positive integer number for this system is 2,047 and the 
+minimum negative number is -2,048. The system doesn't validate the maximum
+number. In the other hand, if the program wants to add 1 to 2,047, it will 
+become -2,048. The reason why the system doesn't validate the maximum bound
+and report the error is because that's not the responsibility of the system
+but the program. Doing validation requires more CPU cycles and it will slow 
+down all arithmetic operation without necessary. Not even system, most programming
+languages don't implement validation as well. The program is responsible for
+validation not a system nor programming language. 
+
+I tried to keep the amount of local variables as minimum as possible and that
+makes the program more difficult to code but the goal is to reflect the real system
+as much as possible.  Notice that the CPU uses general purpose registers that
+is represented as array of logical unit Word (array of Bit) instead of local variable
+to hold arbitrary data.
+
+In phase 2 that introduces multiprogramming to the system. The format of loader
+is changed from all hex digits to hex digits including some semantics tokens 
+such as ** JOB. 
+In phase 1, I wrote the Loader to be able to translate in most possible format
+and layout because it's not specified in requirement explicitly that all digits
+must be together to form the group of related hex digits. So, the Loader can 
+handle even the digits are separated by new line, or carriage return character.
+I couldn't take that approach in Phase 2 because I don't want to make the program
+more complicated than necessary. So, the new constraint for loader format is that
+the related hex digits must be together. They cannot be separated.
+In phase 2, Loader also can communicate with Scheduler in addition to Memory. 
+Loader can now inquiry and allocate memory space by best fit policy and signal
+Scheduler to initiate the new Job if memory allocation is success.   
+
+There are 2 ways to implement I/O action. I/O is the simulate I/O, so it performs
+an action when the I/O elapse time is 10 as specified in specification but it doesn't
+really consume 10 CPU clocks. I can spawn new thread for doing I/O and let it takes
+10 time units but I think it's not a good idea to do that because I/O operation time
+must be synchronized with the CPU clock. That will create another problem and 
+this system is not multiprocessing but multiprogramming. Using thread in this system 
+would be the wrong decision.  Back to the I/O problem, what is the right time to 
+perform I/O. Before or after the I/O elapse time. If the I/O does perform immediately 
+after the WR or RD instruction, it will be very easy to implement but it doesn't reflect
+the real multiprogramming system. I decided to implement the hard way in order to archive
+the goal that is to reflect the real system as much as possible. That decision made
+me spent 1 more day to debug the program. All the program logic works correctly but 
+the results were incorrect because multiprogramming. I/O tried to write back the value
+to the CPU register during the time of other job was executing. I solved this problem using
+one variable to hold the data in PCB until it acquires CPU time.
+The I/O system can handle both standard input/output which is keyboard and screen respectively
+because it's the continuous work from Phase 1 but in Phase 2, the in memory is used instead.
+However, the system can fall back to the standard I/O if the in memory I/O is not declared. 
+
+The memory section and CPU are the easiest parts to change because they still use the old address
+reference that is now treated as virtual address, the virtual address will be calculated to
+physical address by memory manager.
+
+ 
+I put the auxiliary classes in the same file as main class file to save the paper 
+when they're printed out by typescript utility. And I also changed the indentation
+character from TAB to SPACE to make it pretty in UNIX system. Windows uses 4 spaces
+for TAB but Unix-like system uses 8 spaces for TAB that makes the code look untidy 
+sometimes when the TAB is used for indentation. Most programmers change TAB to SPACE 
+because they don't work in Windows environment. In addition, SPACE is best to use 
+for aligning variables. No right or wrong and I pick no side. 
 
 
+
+
+
+
+   
 

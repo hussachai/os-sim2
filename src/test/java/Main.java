@@ -12,7 +12,10 @@ public class Main {
     
     public static void main(String[] args) {
         args = new String[]{
-                "programs/custom/inc"
+//                "programs/single/infinite-loop"
+//                "programs/single/_square"
+//                "programs/single/_dec-to-hex"
+//                "programs/custom/inc"
 //            "programs/single/sum-of-seq"
 //            "programs/single/add-two-numbers"
 //                "programs/single/exponent"
@@ -20,8 +23,9 @@ public class Main {
 //              "programs/custom/repeat_medium"
 //            "programs/custom/repeat_mixed_small_medium"
 //                "programs/custom/inc"
-//            "programs/tb"
-//               "programs/tb-custom"
+//            "programs/tb+err"
+                "programs/tb"
+//               "programs/tb-custom2"
         };
         TheSystem.main(args);
     }

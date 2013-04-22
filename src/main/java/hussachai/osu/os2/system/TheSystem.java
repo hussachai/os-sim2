@@ -24,14 +24,17 @@
  */
 package hussachai.osu.os2.system;
 
-import hussachai.osu.os2.system.Loader.Context;
-import hussachai.osu.os2.system.Loader.EndOfBatchException;
-import hussachai.osu.os2.system.Loader.MemoryNotAvailableException;
 import hussachai.osu.os2.system.cpu.CPU;
 import hussachai.osu.os2.system.error.ErrorHandler;
 import hussachai.osu.os2.system.error.Errors;
 import hussachai.osu.os2.system.error.SystemException;
 import hussachai.osu.os2.system.io.IOManager;
+import hussachai.osu.os2.system.loader.Loader;
+import hussachai.osu.os2.system.loader.Loader.Context;
+import hussachai.osu.os2.system.loader.Loader.EndOfBatchException;
+import hussachai.osu.os2.system.loader.Loader.MemoryNotAvailableException;
+import hussachai.osu.os2.system.misc.SystemStat;
+import hussachai.osu.os2.system.scheduler.Scheduler;
 import hussachai.osu.os2.system.storage.Memory;
 import hussachai.osu.os2.system.unit.ID;
 
@@ -58,6 +61,8 @@ public class TheSystem {
     
     private ErrorHandler errorHandler = new ErrorHandler();
     
+    private SystemStat stat = new SystemStat();
+    
     public TheSystem(){}
     
     public void start(String fileName){
@@ -67,6 +72,7 @@ public class TheSystem {
         memory.init(this);
         scheduler.init(this);
         errorHandler.init(this);
+        stat.init(this);
         
         File file = new File(fileName);
         if(!file.exists()){
@@ -77,6 +83,7 @@ public class TheSystem {
         
         try{
             while(true){
+                
                 while(true){
                     ID jobID = null;
                     Context context = new Context();
@@ -90,17 +97,19 @@ public class TheSystem {
                         
                         break;
                     }catch(MemoryNotAvailableException e){
+                        /* do nothing, just skip loading */
                         break;
                     }catch(EndOfBatchException e){
                         if(scheduler.isFinished()){
-//                            memory.debug();
                             throw e;
                         }
                         break;
                     }catch(Exception e){
-                        e.printStackTrace();
-                        jobID = jobIDGenerator.nextSequence();
-                        //TODO: print error
+                        if(jobID==null){
+                            jobID = jobIDGenerator.nextSequence();
+                            stat.writeLog("Job ID (hex)", jobID);
+                            errorHandler.errorHandler(e);
+                        }
                     }
                 }
                 
@@ -108,17 +117,11 @@ public class TheSystem {
             }
             
         }catch(EndOfBatchException e){
-            //TODO: print statistic report here
-            System.out.println("END OF BATCH");
-        }finally{
             
-//            String clockHex = new BigInteger(String.valueOf(
-//                    cpu.getClock()), 10).toString(16);
-//            int inputTime = cpu.getInputTime();
-//            int outputTime = cpu.getOutputTime();
-//            io.getLog().info("Clock value: "+clockHex+" (hex)");
-//            io.getLog().info("Input time: "+inputTime+" (decimal)");
-//            io.getLog().info("Output time: "+outputTime+" (decimal)");
+            stat.onSystemShutdown();
+            
+        }catch(Exception e){
+            e.printStackTrace();
         }
     }
     
@@ -134,6 +137,8 @@ public class TheSystem {
     
     public ErrorHandler getErrorHandler() { return errorHandler; }
     
+    public SystemStat getStat(){ return stat; }
+    
     /** entry point **/
     public static void main(String[] args) {
         
@@ -142,17 +147,10 @@ public class TheSystem {
             return;
         }
         TheSystem system = new TheSystem();
-        IOManager io = system.getIO();
-        
         try{
             system.start(args[0]);
-            io.getLog().info("Terminated successfully.");
-        }catch(SystemException e){
+        }catch(Exception e){
             e.printStackTrace();
-            system.errorHandler.errorHandler(e.getErrorCode());
-        }catch(Throwable e){
-            e.printStackTrace();
-            system.errorHandler.errorHandler(Errors.SYS_INTERNAL_ERROR);
         }
     }
     

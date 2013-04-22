@@ -1,6 +1,8 @@
-package hussachai.osu.os2.system;
+package hussachai.osu.os2.system.scheduler;
 
+import hussachai.osu.os2.system.TheSystem;
 import hussachai.osu.os2.system.cpu.CPU;
+import hussachai.osu.os2.system.error.ErrorHandler;
 import hussachai.osu.os2.system.error.Errors;
 import hussachai.osu.os2.system.error.LogicException;
 import hussachai.osu.os2.system.error.SystemException;
@@ -9,11 +11,13 @@ import hussachai.osu.os2.system.io.IOHandlers.MemoryOutputHandler;
 import hussachai.osu.os2.system.io.IOManager;
 import hussachai.osu.os2.system.io.IOManager.IOType;
 import hussachai.osu.os2.system.io.InterruptException;
+import hussachai.osu.os2.system.loader.Loader;
+import hussachai.osu.os2.system.misc.SystemStat;
+import hussachai.osu.os2.system.misc.TraceFormatter;
 import hussachai.osu.os2.system.storage.Memory;
 import hussachai.osu.os2.system.unit.Bit;
 import hussachai.osu.os2.system.unit.ID;
 import hussachai.osu.os2.system.unit.Word;
-import hussachai.osu.os2.system.util.TraceFormatter;
 
 import java.util.Comparator;
 import java.util.PriorityQueue;
@@ -65,11 +69,17 @@ public class Scheduler {
     
     private IOManager io;
     
+    private SystemStat stat;
+    
+    private ErrorHandler errorHandler;
+    
     public void init(TheSystem system){
         
         this.cpu = system.getCPU();
         this.memory = system.getMemory();
         this.io = system.getIO();
+        this.errorHandler = system.getErrorHandler();
+        this.stat = system.getStat();
         
         /*
          * Comparator for ready queue. It orders the ready queue based on
@@ -147,9 +157,7 @@ public class Scheduler {
         
         readyQueue.add(pcb);
         
-        io.getLog().info("Cumulative Job ID: "+jobID+" (hex)");
-        
-        /* assign the last instruction word as start address word*/ 
+        stat.onJobInitiated(pcb);
         
         if(pcb.traceSwitch==Bit.I){
             io.getLog().clearTrace(jobID);
@@ -164,10 +172,19 @@ public class Scheduler {
      * Terminate job
      * @param pcb
      */
-    public void terminate(){
+    public void terminate(Exception e){
         
         if(running==null){
             throw new LogicException("No running job to be terminated");
+        }
+        
+        stat.onJobTerminated(running, e);
+        
+        if(e!=null){
+            errorHandler.errorHandler(e);
+        }else{
+            io.getLog().info("[Terminated normally]");
+            io.getLog().info("\n");
         }
         
         memory.deallocate(running.getPartition());
@@ -216,13 +233,16 @@ public class Scheduler {
             try{
                 while(true){
                     running.cpuUsageTime++;
+                    if(running.cpuUsageTime>=TIME_LIMIT){
+                        throw new SystemException(Errors.CPU_SUSPECTED_INFINITE_JOB);
+                    }
                     running.remainingQuantum--;
                     operateIO();
                     boolean hasMore = cpu.cpu(running.pc, running.traceSwitch);
                     /* snapshot must be done after calling CPU routine */
                     snapshotCPU();
                     if(!hasMore){
-                        terminate();
+                        terminate(null);
                         /* go out to system for loading new job 
                          * if there exists */
                         return; 
@@ -238,44 +258,53 @@ public class Scheduler {
                     }
                 }
             }catch(InterruptException e){
-                
-                snapshotCPU();
-                running.remainingIOTime = IOManager.TIME_IO;
-                running.ioType = e.getIOType();
-                running.targetRegister = e.getTargetRegister();
-                if(e.getIOType()==IOType.Read){
-                    MemoryInputHandler inputHandler = new MemoryInputHandler();
-                    inputHandler.setMemory(memory);
-                    inputHandler.setPartition(running.getPartition());
-                    if(running.readerIndex>=running.dataLines){
-                        throw new SystemException(Errors.PROG_MISSING_DATA);
-                    }
-                    int memoryIndex = running.length+running.readerIndex;
-                    inputHandler.setMemoryIndex(memoryIndex);
-                    running.readerIndex++;
-                    running.inputHandler = inputHandler;
-                }else{
-                    MemoryOutputHandler outputHandler = new MemoryOutputHandler();
-                    outputHandler.setMemory(memory);
-                    outputHandler.setPartition(running.getPartition());
-                    if(running.writerIndex>=running.outputLines){
-                        throw new SystemException(Errors.IO_INSUFFICIENT_OUTPUT_SPACE);
-                    }
-                    int memoryIndex = running.length+running.dataLines+
-                            running.writerIndex;
-                    outputHandler.setMemoryIndex(memoryIndex);
-                    running.writerIndex++;
-                    running.outputHandler = outputHandler;
+                try{
+                    handleInterrupt(e);
+                }catch(Exception e2){
+                    terminate(e2);
                 }
-                
-                blockedQueue.add(running);
-                running = null;
-                
+            }catch(Exception e){
+                /* terminate abnormally */
+                terminate(e);
             }
         }else{
             throw new LogicException("Scheduler failed!");
         }
         
+    }
+    
+    private void handleInterrupt(InterruptException e){
+        snapshotCPU();
+        running.remainingIOTime = IOManager.TIME_IO;
+        running.ioType = e.getIOType();
+        running.targetRegister = e.getTargetRegister();
+        if(e.getIOType()==IOType.Read){
+            MemoryInputHandler inputHandler = new MemoryInputHandler();
+            inputHandler.setMemory(memory);
+            inputHandler.setPartition(running.getPartition());
+            if(running.readerIndex>=running.dataLines){
+                throw new SystemException(Errors.PROG_MISSING_DATA);
+            }
+            int memoryIndex = running.length+running.readerIndex;
+            inputHandler.setMemoryIndex(memoryIndex);
+            running.readerIndex++;
+            running.inputHandler = inputHandler;
+        }else{
+            MemoryOutputHandler outputHandler = new MemoryOutputHandler();
+            outputHandler.setMemory(memory);
+            outputHandler.setPartition(running.getPartition());
+            if(running.writerIndex>=running.outputLines){
+                throw new SystemException(Errors.IO_INSUFFICIENT_OUTPUT_SPACE);
+            }
+            int memoryIndex = running.length+running.dataLines+
+                    running.writerIndex;
+            outputHandler.setMemoryIndex(memoryIndex);
+            running.writerIndex++;
+            running.outputHandler = outputHandler;
+        }
+        
+        blockedQueue.add(running);
+        running = null;
     }
     
     private void snapshotCPU(){
@@ -303,8 +332,8 @@ public class Scheduler {
                 /* add data to pending write back */
                 pcb.pendingInputData = data;
             }else{
-//                io.write(pcb.outputHandler, pcb.targetRegister);
-                io.write(null, pcb.targetRegister);
+                io.write(pcb.outputHandler, pcb.targetRegister);
+//                io.write(null, pcb.targetRegister);
             }
             
             readyQueue.add(blockedQueue.poll());
