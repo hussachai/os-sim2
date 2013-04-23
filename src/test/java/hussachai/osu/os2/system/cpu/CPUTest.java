@@ -26,6 +26,8 @@ public class CPUTest {
         TheSystem system = new TheSystem();
         memory = system.getMemory();
         cpu = system.getCPU();
+        memory.init(system);
+        cpu.init(system);
     }
     
     @Test

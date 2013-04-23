@@ -136,16 +136,16 @@ List of the utilities being used
 Bulk complexities of simulation program
 =================================
 Java    
-Number of files:    19
-Number of classes:  19
-Number of enum types:   3
-Number of methods:  79
-Number of decisions:    158 (If-clauses and the number of cases)
+Number of files:    26
+Number of classes:  33
+Number of enum types:   4
+Number of methods:  85
+Number of decisions:    233 (If-clauses While-do and the number of cases)
 Line of code
-    Blank       316
-    Comment     639
-    Code        1,255
-    Total Lines 2,210
+    Blank       615
+    Comment     1,220
+    Code        2,291
+    Total Lines 4,126
 
 Approximate break-down of the time spent in the design, 
 coding, and testing
