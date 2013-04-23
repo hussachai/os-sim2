@@ -24,7 +24,8 @@ public class Main {
 //            "programs/custom/repeat_mixed_small_medium"
 //                "programs/custom/inc"
 //            "programs/tb+err"
-                "programs/tb"
+                "programs/tb+err+inc"
+//                "programs/tb"
 //               "programs/tb-custom2"
         };
         TheSystem.main(args);

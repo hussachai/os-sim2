@@ -81,13 +81,15 @@ public class TheSystem {
         
         io.getLog().clearInfo();
         
+        int x = 0;
         try{
             while(true){
                 
                 while(true){
                     ID jobID = null;
-                    Context context = new Context();
                     try{
+                        
+                        Context context = new Context();
                         
                         loader.loader(file, context);
                         
@@ -105,6 +107,7 @@ public class TheSystem {
                         }
                         break;
                     }catch(Exception e){
+                        x++;
                         if(jobID==null){
                             jobID = jobIDGenerator.nextSequence();
                             stat.writeLog("Job ID (hex)", jobID);
@@ -119,7 +122,7 @@ public class TheSystem {
         }catch(EndOfBatchException e){
             
             stat.onSystemShutdown();
-            
+            System.out.println("X=======>"+x);
         }catch(Exception e){
             e.printStackTrace();
         }

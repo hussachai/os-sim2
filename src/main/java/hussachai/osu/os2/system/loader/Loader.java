@@ -9,6 +9,7 @@ import hussachai.osu.os2.system.unit.Bit;
 import hussachai.osu.os2.system.unit.Word;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.RandomAccessFile;
 
 /**
@@ -39,31 +40,45 @@ public class Loader {
     @SuppressWarnings("resource")/* JDK bug: false resource leak warning */
     public void loader(File file, Context context){
         
+        boolean done = false;
+        String data = null;
         RandomAccessFile dataInput = null;
+        
         try{
             
             dataInput = new RandomAccessFile(file, "r");
             
             /* resume reading from the last point */
             dataInput.seek(this.lastFilePointer);
-            boolean done = false;
-            String data = null;
+            
             while( (data = dataInput.readLine()) !=null){
+                
                 /*guarantee that no space surrounding data*/
                 data = data.trim();
                 
                 /* empty line is used as job delimiter */
                 if(data.length()==0){
-                    if(context.lastPart==null) continue;
-                    if(context.lastPart!=ModulePart.END){
-                        throw new SystemException(Errors.PROG_MISSING_END_RECORD);
+                    if(context.isVisitedSome()){
+                        if(context.lastPart!=ModulePart.END){
+                            moveFilePointerToNewModule(dataInput);
+                            throw new SystemException(Errors.PROG_MISSING_END_RECORD);
+                        }
+                    }else{
+                        continue;
                     }
                 }
                 
-                done = parseLine(context, data);
+                try{
+                    done = parseLine(context, data);
+                }catch(SystemException e){
+                    moveFilePointerToNewModule(dataInput);
+                    throw e;
+                }
                 
                 if(done){
+                    
                     this.lastFilePointer = dataInput.getFilePointer();
+                    
                     if(context.length < context.actualLength){
                         throw new SystemException(Errors.MEM_INCORRECT_RESERVED_SIZE);
                     }
@@ -87,18 +102,6 @@ public class Loader {
             
             memory.deallocate(context.partition);
             
-            /* Move file cursor to the next job */
-            String data = null;
-            try{
-                while( (data = dataInput.readLine()) !=null){
-                    System.out.println(data);
-                    if("".equals(data.trim())){
-                        this.lastFilePointer = dataInput.getFilePointer();
-                        break;
-                    }
-                }
-            }catch(Exception e2){ throw new SystemException(e); }
-            
             if(e instanceof RuntimeException) throw (RuntimeException)e;
             throw new SystemException(e);
             
@@ -108,6 +111,23 @@ public class Loader {
             }catch(Exception e){}
         }
         
+    }
+    
+    private void moveFilePointerToNewModule(RandomAccessFile dataInput){
+        String data = null;
+        try{
+            while( (data = dataInput.readLine()) !=null){
+                if(data.trim().length()==0){
+                    this.lastFilePointer = dataInput.getFilePointer();
+                    break;
+                }
+            }
+            if(data==null){
+                throw new EndOfBatchException();
+            }
+        }catch(IOException e){
+            e.printStackTrace();
+        }
     }
     
     /**
@@ -345,6 +365,8 @@ public class Loader {
         /** Hold the start address which will be used as PC */
         protected Word startAddress;
         
+        protected int errorCode = -1;
+        
         public Partition getPartition(){ return partition; }
         public int getDataLines(){ return dataLines; }
         public int getOutputLines(){ return outputLines; }
@@ -362,7 +384,16 @@ public class Loader {
         public boolean isVisited(ModulePart modulePart){
             return this.visitedParts[modulePart.ordinal()];
         }
-        
+        public boolean isVisitedSome(){
+            for(boolean visitedPart: visitedParts){
+                if(visitedPart) return true;
+            }
+            return false;
+        }
+        public void setErrorCode(int errorCode){
+            if(errorCode!=-1) return;
+            this.errorCode = errorCode;
+        }
     }
     
     /**

@@ -91,9 +91,11 @@ public class SystemStat {
         }
         
         writeLog("Job ID (hex)", pcb.getJobID());
-        
-        memory.memory(pcb.getPartition(), Signal.DUMP, pcb.getOccupiedSpace(), null);
-        
+        try{
+            memory.memory(pcb.getPartition(), Signal.DUMP, pcb.getOccupiedSpace()-1, null);
+        }catch(Exception e2){
+            System.out.println();
+        }
         writeLog("Input Lines", "");
         Word tmp = new Word();
         int startAddr = pcb.getLength();

@@ -36,4 +36,8 @@ public class SystemException extends RuntimeException {
         return errorCode;
     }
     
+    @Override
+    public String toString(){
+        return "ERROR("+errorCode+")";
+    }
 }
