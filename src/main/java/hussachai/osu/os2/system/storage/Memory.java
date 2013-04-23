@@ -79,11 +79,6 @@ public class Memory {
         this.scheduler = system.getScheduler();
     }
     
-//    public void debug(){
-//        for(int i=0;i<MEMORY_SIZE;i++){
-//            System.out.println("["+i+"]"+addresses[i]);
-//        }
-//    }
     /**
      * Try to allocate available partition based on the best fit policy.
      * If the allocation is success, the allocate method will return
@@ -118,6 +113,13 @@ public class Memory {
         }
     }
     
+    /**
+     * Get memory partition by number.
+     * @return
+     */
+    public Partition getPartition(int i){
+        return partitions[i];
+    }
     
     /**
      * 
@@ -189,7 +191,7 @@ public class Memory {
                     if(j%8==0 && i< numWords-1){
                         bw.newLine();
                         bw.append("0").append(
-                                Word.fromDecimal(j).toString());
+                                Word.fromDecimal(i).toString());
                     }
                     bw.append("\t");
                 }
@@ -252,7 +254,7 @@ public class Memory {
             return boundAddress-baseAddress+1;
         }
         
-        public int getId(){ return id; }
+        public int getID(){ return id; }
         public int getBaseAddress(){ return baseAddress; }
         public int getBoundAddress(){ return boundAddress; }
         public boolean isFree(){ return free; }

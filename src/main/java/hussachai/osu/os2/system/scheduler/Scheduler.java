@@ -1,5 +1,6 @@
 package hussachai.osu.os2.system.scheduler;
 
+import hussachai.osu.os2.system.SystemEvent;
 import hussachai.osu.os2.system.TheSystem;
 import hussachai.osu.os2.system.cpu.CPU;
 import hussachai.osu.os2.system.error.ErrorHandler;
@@ -11,12 +12,8 @@ import hussachai.osu.os2.system.io.IOHandlers.MemoryOutputHandler;
 import hussachai.osu.os2.system.io.IOManager;
 import hussachai.osu.os2.system.io.IOManager.IOType;
 import hussachai.osu.os2.system.io.InterruptException;
-import hussachai.osu.os2.system.loader.Loader;
-import hussachai.osu.os2.system.misc.SystemStat;
-import hussachai.osu.os2.system.misc.TraceFormatter;
+import hussachai.osu.os2.system.loader.LoaderContext;
 import hussachai.osu.os2.system.storage.Memory;
-import hussachai.osu.os2.system.unit.Bit;
-import hussachai.osu.os2.system.unit.ID;
 import hussachai.osu.os2.system.unit.Word;
 
 import java.util.Comparator;
@@ -38,7 +35,7 @@ public class Scheduler {
     public static final int INIT_QUANTUM = 35;
     
     /** Task time limit for detecting infinite loop. */
-    public static final int TIME_LIMIT = 500;
+    public static final int TIME_LIMIT = 1000;
     
     /** Current running process. This value must not be null when
      *  there is a job running in CPU.
@@ -69,17 +66,21 @@ public class Scheduler {
     
     private IOManager io;
     
-    private SystemStat stat;
+    private SystemEvent event;
     
     private ErrorHandler errorHandler;
     
+    /**
+     * 
+     * @param system
+     */
     public void init(TheSystem system){
         
         this.cpu = system.getCPU();
         this.memory = system.getMemory();
         this.io = system.getIO();
         this.errorHandler = system.getErrorHandler();
-        this.stat = system.getStat();
+        this.event = system.getEvent();
         
         /*
          * Comparator for ready queue. It orders the ready queue based on
@@ -132,19 +133,37 @@ public class Scheduler {
     
     /**
      * 
-     * @return
+     * @return PCB of current job being executed
      */
-    public PCB getRunning(){ return running; }
+    public PCB getRunning(){ 
+        return running; 
+    }
+    
+    /**
+     * 
+     * @return # of jobs in ready queue
+     */
+    public int getNumberOfJobsInReadyQueue(){
+        return readyQueue.size();
+    }
+    
+    /**
+     * 
+     * @return # of jobs in blocked queue
+     */
+    public int getNumberOfJobsInBlockedQueue(){
+        return blockedQueue.size();
+    }
     
     /**
      * 
      * @param context
      * @param jobID
      */
-    public void initiate(Loader.Context context, ID jobID){
+    public void initiate(LoaderContext context){
         
         PCB pcb = new PCB();
-        pcb.jobID = jobID;
+        pcb.jobID = context.getJobID();
         pcb.traceSwitch = context.getTraceSwitch();
         pcb.pc = context.getStartAddress();
         pcb.createdTime = cpu.getClock();
@@ -157,14 +176,8 @@ public class Scheduler {
         
         readyQueue.add(pcb);
         
-        stat.onJobInitiated(pcb);
+        event.onJobInitiated(pcb);
         
-        if(pcb.traceSwitch==Bit.I){
-            io.getLog().clearTrace(jobID);
-            /* write trace header */
-            io.getLog().trace(jobID, "   Trace data in hex format");
-            io.getLog().trace(jobID, TraceFormatter.getTraceHeader());
-        }
     }
     
     
@@ -172,16 +185,16 @@ public class Scheduler {
      * Terminate job
      * @param pcb
      */
-    public void terminate(Exception e){
+    public void terminate(Exception error){
         
         if(running==null){
             throw new LogicException("No running job to be terminated");
         }
         
-        stat.onJobTerminated(running, e);
+        event.onJobTerminated(error);
         
-        if(e!=null){
-            errorHandler.errorHandler(e);
+        if(error!=null){
+            errorHandler.errorHandler(error);
         }else{
             io.getLog().info("[Terminated normally]");
             io.getLog().info("\n");
@@ -191,11 +204,20 @@ public class Scheduler {
         this.running = null;
     }
     
+    /**
+     * Check whether there's a job in the system or not.
+     * 
+     * @return
+     */
     public boolean isFinished(){
+        
         return readyQueue.isEmpty() && 
                 blockedQueue.isEmpty() && running==null;
     }
     
+    /**
+     * 
+     */
     public void controlTraffic(){
         
         if(readyQueue.isEmpty()){
@@ -218,16 +240,23 @@ public class Scheduler {
         }
         
         PCB pcb = readyQueue.poll();
-        /* Begin context switching */
-        pcb.remainingQuantum = INIT_QUANTUM;
+        
+        /* Begin context switching ***********/
+        
         this.running = pcb;
+        
+        event.onContextSwitched();
+        
+        pcb.remainingQuantum = INIT_QUANTUM;//reset quantum
+        
         cpu.restoreCPU(pcb.registers);
         
         if(pcb.pendingInputData!=null){
             Word.copy(pcb.pendingInputData, pcb.targetRegister);
             pcb.pendingInputData = null;
         }
-        /* End context switching */
+        
+        /* End context switching *************/
         
         if(this.running!=null){
             try{
@@ -273,15 +302,24 @@ public class Scheduler {
         
     }
     
-    private void handleInterrupt(InterruptException e){
+    /**
+     * 
+     * @param interrupt
+     */
+    private void handleInterrupt(InterruptException interrupt){
+        
         snapshotCPU();
+        
         running.remainingIOTime = IOManager.TIME_IO;
-        running.ioType = e.getIOType();
-        running.targetRegister = e.getTargetRegister();
-        if(e.getIOType()==IOType.Read){
+        running.ioType = interrupt.getIOType();
+        running.targetRegister = interrupt.getTargetRegister();
+        
+        if(interrupt.getIOType()==IOType.Read){
+            
             MemoryInputHandler inputHandler = new MemoryInputHandler();
             inputHandler.setMemory(memory);
             inputHandler.setPartition(running.getPartition());
+            
             if(running.readerIndex>=running.dataLines){
                 throw new SystemException(Errors.PROG_MISSING_DATA);
             }
@@ -290,9 +328,11 @@ public class Scheduler {
             running.readerIndex++;
             running.inputHandler = inputHandler;
         }else{
+            
             MemoryOutputHandler outputHandler = new MemoryOutputHandler();
             outputHandler.setMemory(memory);
             outputHandler.setPartition(running.getPartition());
+            
             if(running.writerIndex>=running.outputLines){
                 throw new SystemException(Errors.IO_INSUFFICIENT_OUTPUT_SPACE);
             }
@@ -304,10 +344,17 @@ public class Scheduler {
         }
         
         blockedQueue.add(running);
+        
+        event.onIORequested(interrupt);
+        
         running = null;
     }
     
+    /**
+     * Copy current CPU registers to the PCB
+     */
     private void snapshotCPU(){
+        
         if(running==null){
             throw new LogicException("CPU Snapshot without active PCB");
         }
@@ -321,10 +368,13 @@ public class Scheduler {
      * to ready queue. otherwise, false.
      */
     private boolean operateIO(){
+        
         if(blockedQueue.isEmpty()) return false;
+        
         PCB pcb = blockedQueue.peek();
         pcb.remainingIOTime--;
         pcb.ioUsageTime++;
+        
         if(pcb.remainingIOTime==0){
             
             if(pcb.ioType==IOType.Read){
@@ -343,3 +393,4 @@ public class Scheduler {
     }
     
 }
+

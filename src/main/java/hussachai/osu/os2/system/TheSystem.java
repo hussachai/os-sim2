@@ -30,13 +30,14 @@ import hussachai.osu.os2.system.error.Errors;
 import hussachai.osu.os2.system.error.SystemException;
 import hussachai.osu.os2.system.io.IOManager;
 import hussachai.osu.os2.system.loader.Loader;
-import hussachai.osu.os2.system.loader.Loader.Context;
 import hussachai.osu.os2.system.loader.Loader.EndOfBatchException;
 import hussachai.osu.os2.system.loader.Loader.MemoryNotAvailableException;
-import hussachai.osu.os2.system.misc.SystemStat;
+import hussachai.osu.os2.system.loader.LoaderContext;
 import hussachai.osu.os2.system.scheduler.Scheduler;
 import hussachai.osu.os2.system.storage.Memory;
+import hussachai.osu.os2.system.unit.Bit;
 import hussachai.osu.os2.system.unit.ID;
+import hussachai.osu.os2.system.util.TraceFormatter;
 
 import java.io.File;
 
@@ -46,8 +47,6 @@ import java.io.File;
  *
  */
 public class TheSystem {
-    
-    private ID jobIDGenerator = new ID();
     
     private Loader loader = new Loader();
     
@@ -61,7 +60,7 @@ public class TheSystem {
     
     private ErrorHandler errorHandler = new ErrorHandler();
     
-    private SystemStat stat = new SystemStat();
+    private SystemEvent event = new SystemEvent();
     
     public TheSystem(){}
     
@@ -72,7 +71,7 @@ public class TheSystem {
         memory.init(this);
         scheduler.init(this);
         errorHandler.init(this);
-        stat.init(this);
+        event.init(this);
         
         File file = new File(fileName);
         if(!file.exists()){
@@ -81,21 +80,21 @@ public class TheSystem {
         
         io.getLog().clearInfo();
         
-        int x = 0;
         try{
             while(true){
                 
                 while(true){
-                    ID jobID = null;
+                    
+                    LoaderContext context = new LoaderContext();
+                    
                     try{
-                        
-                        Context context = new Context();
                         
                         loader.loader(file, context);
                         
-                        jobID = jobIDGenerator.nextSequence();
+                        scheduler.initiate(context);
                         
-                        scheduler.initiate(context, jobID);
+                        writeTraceHeader(context.getJobID(), 
+                                context.getTraceSwitch());
                         
                         break;
                     }catch(MemoryNotAvailableException e){
@@ -107,12 +106,10 @@ public class TheSystem {
                         }
                         break;
                     }catch(Exception e){
-                        x++;
-                        if(jobID==null){
-                            jobID = jobIDGenerator.nextSequence();
-                            stat.writeLog("Job ID (hex)", jobID);
-                            errorHandler.errorHandler(e);
-                        }
+                        writeTraceHeader(context.getJobID(), 
+                                context.getTraceSwitch());
+                        
+                        errorHandler.errorHandler(e);
                     }
                 }
                 
@@ -121,8 +118,8 @@ public class TheSystem {
             
         }catch(EndOfBatchException e){
             
-            stat.onSystemShutdown();
-            System.out.println("X=======>"+x);
+            event.onSystemShutdown();
+            
         }catch(Exception e){
             e.printStackTrace();
         }
@@ -140,13 +137,35 @@ public class TheSystem {
     
     public ErrorHandler getErrorHandler() { return errorHandler; }
     
-    public SystemStat getStat(){ return stat; }
+    public SystemEvent getEvent(){ return event; }
+    
+    /**
+     * 
+     * @param jobID
+     * @param traceSwitch
+     */
+    private void writeTraceHeader(ID jobID, Bit traceSwitch){
+        if(traceSwitch==Bit.I){
+            io.getLog().clearTrace(jobID);
+            /* write trace header */
+            io.getLog().trace(jobID, "   Trace data in hex format");
+            io.getLog().trace(jobID, TraceFormatter.getTraceHeader());
+        }
+    }
     
     /** entry point **/
     public static void main(String[] args) {
         
         if(args.length==0){
-            System.out.println("Missing file argument");
+            System.out.println("java basic-os-sim2.jar filename [-Devent.$eventName] ...");
+            System.out.println("Available event environments");
+            System.out.println("-D"+Environment.EVENT_ALL);
+            System.out.println("-D"+Environment.EVENT_JOB_INIT);
+            System.out.println("-D"+Environment.EVENT_JOB_TERM);
+            System.out.println("-D"+Environment.EVENT_LOAD_FAIL);
+            System.out.println("-D"+Environment.EVENT_CTX_SWITCH);
+            System.out.println("-D"+Environment.EVENT_IO_REQ);
+            System.out.println("-D"+Environment.EVENT_MALLOC);
             return;
         }
         TheSystem system = new TheSystem();

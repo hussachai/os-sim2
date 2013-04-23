@@ -1,3 +1,4 @@
+import hussachai.osu.os2.system.Environment;
 import hussachai.osu.os2.system.TheSystem;
 
 import org.junit.Ignore;
@@ -11,6 +12,7 @@ import org.junit.Ignore;
 public class Main {
     
     public static void main(String[] args) {
+        System.setProperty(Environment.EVENT_ALL, "true");
         args = new String[]{
 //                "programs/single/infinite-loop"
 //                "programs/single/_square"
@@ -23,8 +25,8 @@ public class Main {
 //              "programs/custom/repeat_medium"
 //            "programs/custom/repeat_mixed_small_medium"
 //                "programs/custom/inc"
-//            "programs/tb+err"
-                "programs/tb+err+inc"
+            "programs/tb+err"
+//                "programs/tb+err+inc"
 //                "programs/tb"
 //               "programs/tb-custom2"
         };

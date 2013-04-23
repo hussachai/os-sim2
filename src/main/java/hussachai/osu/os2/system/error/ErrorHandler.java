@@ -66,6 +66,7 @@ public class ErrorHandler {
             errorNumber = ((SystemException)e).getErrorCode();
             message = errors.getProperty(String.valueOf(errorNumber));
         }else{
+            e.printStackTrace();
             message = e.getMessage();
         }
         

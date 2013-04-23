@@ -98,6 +98,8 @@ public class PCB implements Comparable<PCB>{
     public ID getJobID(){ return jobID; }
     public Word[] getRegisters(){ return registers; }
     public int getCreatedTime(){ return createdTime; }
+    public int getRemainingQuantum(){ return remainingQuantum; }
+    public int getRemainingIOTime(){ return remainingIOTime; }
     public int getCPUUsageTime(){ return cpuUsageTime; }
     public int getIOUsageTime(){ return ioUsageTime; }
     public Partition getPartition(){ return partition; }

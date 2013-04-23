@@ -1,11 +1,13 @@
 package hussachai.osu.os2.system.loader;
+import hussachai.osu.os2.system.SystemEvent;
 import hussachai.osu.os2.system.TheSystem;
 import hussachai.osu.os2.system.error.Errors;
 import hussachai.osu.os2.system.error.SystemException;
+import hussachai.osu.os2.system.loader.LoaderContext.ModulePart;
 import hussachai.osu.os2.system.storage.Buffer;
 import hussachai.osu.os2.system.storage.Memory;
-import hussachai.osu.os2.system.storage.Memory.Partition;
 import hussachai.osu.os2.system.unit.Bit;
+import hussachai.osu.os2.system.unit.ID;
 import hussachai.osu.os2.system.unit.Word;
 
 import java.io.File;
@@ -19,9 +21,13 @@ import java.io.RandomAccessFile;
  */
 public class Loader {
     
+    private ID jobIDGenerator = new ID();
+    
     private Buffer buffer;
     
     private Memory memory;
+    
+    private SystemEvent event;
     
     /* Keep tracking last position file has been read */
     private long lastFilePointer = 0;
@@ -29,6 +35,7 @@ public class Loader {
     public void init(TheSystem system){
         this.buffer = new Buffer(8);
         this.memory = system.getMemory();
+        this.event = system.getEvent();
     }
     
     /**
@@ -38,11 +45,13 @@ public class Loader {
      * or null if memory is not available.
      */
     @SuppressWarnings("resource")/* JDK bug: false resource leak warning */
-    public void loader(File file, Context context){
+    public void loader(File file, LoaderContext context){
         
         boolean done = false;
         String data = null;
         RandomAccessFile dataInput = null;
+        
+        context.jobID = jobIDGenerator.nextSequence();
         
         try{
             
@@ -81,6 +90,8 @@ public class Loader {
                     
                     if(context.length < context.actualLength){
                         throw new SystemException(Errors.MEM_INCORRECT_RESERVED_SIZE);
+                    }else if(context.length > context.actualLength){
+                        event.writeLog(context.jobID, "Declared length is greater than actual length");
                     }
                     /* validate # of data */
                     if(context.dataLines < context.dataCount){
@@ -100,6 +111,11 @@ public class Loader {
             
         }catch(Exception e){
             
+            if( !(e instanceof MemoryNotAvailableException) &&
+                    !(e instanceof EndOfBatchException)){
+                event.onLoadFailed(context, e);
+            }
+            
             memory.deallocate(context.partition);
             
             if(e instanceof RuntimeException) throw (RuntimeException)e;
@@ -113,6 +129,12 @@ public class Loader {
         
     }
     
+    /**
+     * Move cursor to the next start point or throw EndOfBatchException
+     * if the cursor reaches the end of file (EOF).
+     * 
+     * @param dataInput
+     */
     private void moveFilePointerToNewModule(RandomAccessFile dataInput){
         String data = null;
         try{
@@ -136,7 +158,7 @@ public class Loader {
      * @param data
      * @return true if the program is end 
      */
-    private boolean parseLine(Context context, String data){
+    private boolean parseLine(LoaderContext context, String data){
         
         if(data.startsWith("**")){
             String commands[] = data.split("\\s+");
@@ -188,22 +210,36 @@ public class Loader {
                 /* if the data length is 3 and length word hasn't been read yet,
                  * it is supposed to be the length check data */
                 if(context.length==-1){
+                    
                     if(context.lastPart!=ModulePart.JOB){
                         throw new SystemException(Errors.PROG_MISSING_JOB_RECORD);
                     }
+                    
                     context.visit(ModulePart.JOB_PAYLOAD_START);
                     context.length = Word.fromHexString(data).toDecimal();
                     int size = context.length+context.dataLines+context.outputLines;
+                    
+                    /* After knowing total size of the program, Loader has
+                     * to allocate the memory immediately because the buffer is
+                     * too small to store all program data. In the latter part,
+                     * Loader will store the instruction to the buffer and 
+                     * the buffer will be flushed to memory when it's full. 
+                     */
                     context.partition = memory.allocate(size);
+                    
                     if(context.partition==null){
                         throw new MemoryNotAvailableException();
+                    }else{
+                        event.onMemoryAllocated(context);
                     }
+                    
                     return false;
                 }
                 /* if the data length is 3 and length word hasn't been read yet,
                  * it is supposed to be the length check data */
                 if(context.lastPart==ModulePart.DATA
                         || context.lastPart==ModulePart.DATA_PAYLOAD){
+                    
                     context.visit(ModulePart.DATA_PAYLOAD);
                     context.dataCount++;
                     buffer.add(Word.fromHexString(data));
@@ -211,9 +247,11 @@ public class Loader {
                         flushBuffer(context);
                     }
                     return false;
+                    
                 }
             }
             if(data.indexOf(" ")!=-1){
+                
                 /* if there is space in the data, it suppose to be 
                  * the start address and trace switch */
                 String parts[] = data.split("\\s+");
@@ -227,7 +265,9 @@ public class Loader {
                     context.traceSwitch = Word.fromHexString(parts[1])
                             .toDecimal()>0?Bit.I:Bit.O;
                 }
+                
             }else{
+                
                 if(context.lastPart != ModulePart.JOB_PAYLOAD_START
                         && context.length == -1){
                     throw new SystemException(Errors.PROG_MISSING_LENGTH_CHECK);
@@ -240,7 +280,9 @@ public class Loader {
                 context.lastPart = ModulePart.JOB_PAYLOAD;
                 context.visitedParts[ModulePart.JOB_PAYLOAD.ordinal()] = true;
                 String wordStr = null;
+                
                 for(int i=0; i<data.length();i+=3){
+                    
                     wordStr = data.substring(i, i+3);
                     context.actualLength++;
                     context.instruction = Word.fromHexString(wordStr);
@@ -260,7 +302,7 @@ public class Loader {
      * number of data in buffer.
      * @param context
      */
-    private void flushBuffer(Context context){
+    private void flushBuffer(LoaderContext context){
         Word words[] = buffer.flush();
         for(Word word: words){
             memory.memory(context.partition, Memory.Signal.WRIT, context.memoryIndex, word);
@@ -292,111 +334,6 @@ public class Loader {
     }
     
     /**
-     * Enum of module part
-     * @author hussachai
-     *
-     */
-    public static enum ModulePart {
-        JOB, 
-        /** the first line of job payload. It's the length check */
-        JOB_PAYLOAD_START,
-        JOB_PAYLOAD,
-        /**
-         * the last line of job payload. It has start address
-         * and switch bit */
-        JOB_PAYLOAD_END,
-        DATA, 
-        DATA_PAYLOAD, 
-        END
-    }
-    
-    /**
-     * Loader Context
-     * @author hussachai
-     *
-     */
-    public static class Context {
-        
-        /** Allocated partition of memory */
-        protected Partition partition;
-        
-        /** Virtual memory address*/
-        protected int memoryIndex = 0;
-        
-        protected boolean visitedParts[] = new boolean[ModulePart.values().length];
-        /**
-         * The last encounter part. Loader uses this value
-         * to validate the sequence of command.
-         */
-        protected ModulePart lastPart = null;
-        
-        /**
-         * This value is used for validating the actual number of data 
-         * with the specified number of data
-         */
-        protected int dataCount = 0;
-        /** 
-         * Number of data lines in job.
-         * This is the expected number not actual number 
-         * */
-        protected int dataLines = -1;
-        
-        /** 
-         * Number of output lines in job
-         * This is the expected number not actual number 
-         * */
-        protected int outputLines = -1;
-        
-        protected Bit traceSwitch = null;
-        
-        /** 
-         * Check length for validating actual number of instruction
-         * in the other hand, it's expected number of instructions 
-         * */
-        protected int length = -1;
-        /**
-         * This is the actual number of instruction. It's used for
-         * validating program.
-         */
-        protected int actualLength = 0;
-        /** Hold the last instruction word */
-        protected Word instruction;
-        
-        /** Hold the start address which will be used as PC */
-        protected Word startAddress;
-        
-        protected int errorCode = -1;
-        
-        public Partition getPartition(){ return partition; }
-        public int getDataLines(){ return dataLines; }
-        public int getOutputLines(){ return outputLines; }
-        public Bit getTraceSwitch(){ return traceSwitch; }
-        public int getLength(){ return length; }
-        public int getOccupiedSpace(){ 
-            return length+dataLines+outputLines;
-        }
-        public Word getStartAddress(){ return startAddress; }
-        
-        public void visit(ModulePart modulePart){
-            this.lastPart = modulePart;
-            this.visitedParts[modulePart.ordinal()] = true;
-        }
-        public boolean isVisited(ModulePart modulePart){
-            return this.visitedParts[modulePart.ordinal()];
-        }
-        public boolean isVisitedSome(){
-            for(boolean visitedPart: visitedParts){
-                if(visitedPart) return true;
-            }
-            return false;
-        }
-        public void setErrorCode(int errorCode){
-            if(errorCode!=-1) return;
-            this.errorCode = errorCode;
-        }
-    }
-    
-    /**
      * This class is used as a signal for terminating the batch 
      * when there's no more to read.
      * 
@@ -407,6 +344,11 @@ public class Loader {
         private static final long serialVersionUID = 1L;
     }
     
+    /**
+     * 
+     * @author hussachai
+     *
+     */
     public static class MemoryNotAvailableException extends RuntimeException {
         private static final long serialVersionUID = 1L;
     }

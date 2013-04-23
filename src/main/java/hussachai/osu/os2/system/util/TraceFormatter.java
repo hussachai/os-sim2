@@ -1,4 +1,4 @@
-package hussachai.osu.os2.system.misc;
+package hussachai.osu.os2.system.util;
 
 import org.apache.commons.lang3.StringUtils;
 

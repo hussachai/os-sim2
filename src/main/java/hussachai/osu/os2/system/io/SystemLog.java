@@ -34,12 +34,14 @@ public class SystemLog {
     }
     
     public void clearTrace(ID jobID){
+        if(jobID==null) return;
         String fileName = MessageFormat.format(
                 TRACE_LOG, jobID.toString());
         write(fileName, null, false);
     }
     
     public void trace(ID jobID, String data){
+        if(jobID==null) return;
         String fileName = MessageFormat.format(
                 TRACE_LOG, jobID.toString());
         write(fileName, data, true);

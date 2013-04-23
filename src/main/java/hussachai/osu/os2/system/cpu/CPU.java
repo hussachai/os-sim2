@@ -28,8 +28,8 @@
  */
 package hussachai.osu.os2.system.cpu;
 
-import static hussachai.osu.os2.system.misc.TraceFormatter.trace;
-import static hussachai.osu.os2.system.misc.TraceFormatter.traceEmpty;
+import static hussachai.osu.os2.system.util.TraceFormatter.trace;
+import static hussachai.osu.os2.system.util.TraceFormatter.traceEmpty;
 import hussachai.osu.os2.system.TheSystem;
 import hussachai.osu.os2.system.error.Errors;
 import hussachai.osu.os2.system.error.SystemException;
@@ -83,7 +83,6 @@ public class CPU {
     protected int clock = 0;
     
     protected int idleTime = 0;
-//    protected int inputTime = 0, outputTime = 0, execTime = 0;//TODO: must be kept in PCB or something
     
     protected Bit traceSwitch = Bit.O;
     
