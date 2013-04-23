@@ -1,19 +1,25 @@
 /*
  * Name: Hussachai Puripunpinyo
  * Course No.:  CS 5323
- * Assignment title: PHASE II (April 16)
+ * Assignment title: PHASE II (April 23)
  * TA's Name: 
  *  - Alireza Boloorchi
  *  - Sukanya Suwisuthikasem
  * Global variables:
  *  - addresses (The array of word (12 bits) unit. It has 512 words)
+ *  - partitions (The array of memory partition object) 
  *  - io (The reference to InputOutput)
+ *  - scheduler (The reference to Scheduler)
  *  
  *  Brief Description:
  *  Memory is used for accessing the data. It's the main storage of the system.
  *  The keeps the instruction and data in the same array. The system that needs
  *  to access memory must access it via the memory method that supports 
  *  3 different operations - READ, WRITE, and DUMP.
+ *  
+ *  In Phase II, memory now has logical unit called Partition to group the consecutive
+ *  addresses in memory into several units which that size can be the same or different.
+ *  This memory requires partition because of the nature of multiprogramming.
  *  
  */
 package hussachai.osu.os2.system.storage;
@@ -41,18 +47,17 @@ import org.apache.commons.lang3.StringUtils;
  */
 public class Memory {
     
-    /**
-     * the addresses store 512 words
-     */
+    /** the addresses store 512 words */
     public static final int MEMORY_SIZE = 512;
-    
+    /** the number of partition for memory addresses */
     public static final int PARTITION_NUMBERS = 7;
-    
+    /** maximum partition size */
     public static final int MAX_PARTITION_SIZE = 128;
     
     private Word addresses[] = new Word[MEMORY_SIZE];
     
-    /* Memory manager groups each consecutive addresses into 7 partitions
+    /** 
+     * Memory manager groups each consecutive addresses into 7 partitions
      * with different size.
      */
     private Partition partitions[] = new Partition[PARTITION_NUMBERS];
@@ -61,6 +66,10 @@ public class Memory {
     
     private Scheduler scheduler;
     
+    /**
+     * 
+     * @param system
+     */
     public void init(TheSystem system){
         
         for(int i=0; i<MEMORY_SIZE;i++){
@@ -208,11 +217,21 @@ public class Memory {
         }
     }
     
+    /**
+     * 
+     * @param memoryAddr
+     * @return
+     */
     protected Word getCell(Word memoryAddr){
         int memoryIdx = Bit.toDecimal(memoryAddr.getBits());
         return getCell(memoryIdx);
     }
     
+    /**
+     * 
+     * @param memoryIdx
+     * @return
+     */
     protected Word getCell(int memoryIdx){
         if(memoryIdx>=MEMORY_SIZE){
             throw new SystemException(Errors.MEM_RANGE_OUT_OF_BOUND);
@@ -231,6 +250,9 @@ public class Memory {
     
     /**
      * 
+     * Partition is the logical unit in memory. It divides addresses in memory 
+     * into different sub addresses which is limited by base and bound address.
+     * It also has flag to indicate whether this partition is free or not.
      * @author hussachai
      *
      */

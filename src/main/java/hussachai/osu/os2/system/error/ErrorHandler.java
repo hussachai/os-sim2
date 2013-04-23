@@ -1,7 +1,7 @@
 /*
  * Name: Hussachai Puripunpinyo
  * Course No.:  CS 5323
- * Assignment title: PHASE I (March 5)
+ * Assignment title: PHASE II (April 23)
  * TA's Name: 
  *  - Alireza Boloorchi
  *  - Sukanya Suwisuthikasem
@@ -12,7 +12,6 @@
  *  
  *  Brief Description:
  *  Error handler is the module for translating error by error number.
- *  It also dump memory data to a file when error occurs.
  *  
  */
 package hussachai.osu.os2.system.error;

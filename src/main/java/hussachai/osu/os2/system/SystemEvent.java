@@ -1,3 +1,47 @@
+/*
+ * Name: Hussachai Puripunpinyo
+ * Course No.:  CS 5323
+ * Assignment title: PHASE II (April 23)
+ * TA's Name: 
+ *  - Alireza Boloorchi
+ *  - Sukanya Suwisuthikasem
+ * Global variables:
+ *  - cpu (the reference to CPU)
+ *  - memory (the reference to Memory)
+ *  - scheduler (the reference to Scheduler)
+ *  - io (the reference to IOManager)
+ *  - successJobs (the number of jobs that terminated normally)
+ *  - errorJobs (the number of jobs that terminated abnormally)
+ *  - loadFailedJobs (the number of jobs that loaded unsuccessfully)
+ *  - totalJobsRuntime (the total runtime of jobs that terminated normally) 
+ *  - totalJobExecutionTime (the total execution time of jobs that terminated normally)
+ *  - totalJobsIOTime (the total I/O time for jobs that terminated normally)
+ *  - totalJobsTime (the total time of jobs that terminated normally)
+ *  - totalTimeLostForErrors (the total time lost of jobs that terminated abnormally)
+ *  - totalTimeLostForInfinited (the total time lost of jobs that suspected to be infinite)
+ *  - suspectedInifinitedList (the list of ID of jobs that suspected to be infinite)
+ *  - totalFragmentation (the total fragmentation on memory)
+ *  - eventJobInitiated (The switch flag to on/off job initiated event)
+ *  - eventJobTerminated (The switch flag to on/off job terminated event)
+ *  - eventLoadFailed (The switch flag to on/off job loaded failed event)
+ *  - eventIORequest (The switch flag to on/off I/O request event)
+ *  - eventContextSwitch (The switch flag to on/off context switch event)
+ *  - eventMemAlloc (The switch flag to on/off memory allocation event)
+ *  
+ *  Brief Description:
+ *  The SystemEvent is the set of events that will be executed in various parts 
+ *  of the system to monitor what's going on and the information will be output
+ *  to system log which is handled by I/O manager.  
+ *  All events can be turn on/off via System properties. 
+ *  Type: java basic-os-sim2.jar to see available event environments
+ *  
+ *  Remark:
+ *  Specification doesn't specify what resource SystemEvent can use. Due to
+ *  the nature of statistics that requires intensive calculation such as floating
+ *  point calculation and the number likely to be larger than Word (12 bits) to hold.
+ *  I decided to use the native variables and APIs that programming language provides 
+ *  instead of using Word in the system.
+ */
 package hussachai.osu.os2.system;
 
 import hussachai.osu.os2.system.cpu.CPU;
@@ -23,6 +67,8 @@ import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 
 /**
+ * The system event that monitors various events in Loader, Scheduler
+ * and System.
  * 
  * @author hussachai
  *
@@ -88,28 +134,34 @@ public class SystemEvent {
             eventContextSwitch = true;
             eventMemAlloc = true;
         }
-        if(Environment.get(Environment.EVENT_JOB_INIT)!=null){
-            eventJobInitiated = true;
+        String event = Environment.get(Environment.EVENT_JOB_INIT);
+        if(event != null){
+            eventJobInitiated = event.equalsIgnoreCase("true");
         }
-        if(Environment.get(Environment.EVENT_JOB_TERM)!=null){
-            eventJobTerminated = true;
+        event = Environment.get(Environment.EVENT_JOB_TERM);
+        if(event != null){
+            eventJobTerminated = event.equalsIgnoreCase("true");
         }
-        if(Environment.get(Environment.EVENT_LOAD_FAIL)!=null){
-            eventLoadFailed = true;
+        event = Environment.get(Environment.EVENT_LOAD_FAIL);
+        if(event != null){
+            eventLoadFailed = event.equalsIgnoreCase("true");
         }
-        if(Environment.get(Environment.EVENT_IO_REQ)!=null){
-            eventIORequest = true;
+        event = Environment.get(Environment.EVENT_IO_REQ);
+        if(event != null){
+            eventIORequest = event.equalsIgnoreCase("true");
         }
-        if(Environment.get(Environment.EVENT_CTX_SWITCH)!=null){
-            eventContextSwitch = true;
+        event = Environment.get(Environment.EVENT_CTX_SWITCH);
+        if(event != null){
+            eventContextSwitch = event.equalsIgnoreCase("true");
         }
-        if(Environment.get(Environment.EVENT_MALLOC)!=null){
-            eventMemAlloc = true;
+        event = Environment.get(Environment.EVENT_MALLOC);
+        if(event != null){
+            eventMemAlloc = event.equalsIgnoreCase("true");
         }
     }
     
     /**
-     * 
+     * Fired on job initiated event in Scheduler
      * @param pcb
      */
     public void onJobInitiated(PCB pcb){
@@ -134,6 +186,7 @@ public class SystemEvent {
     }
     
     /**
+     * Fired on job terminated event in Scheduler
      */
     public void onJobTerminated(Exception error){
         if(!eventJobTerminated) return;
@@ -199,7 +252,7 @@ public class SystemEvent {
         }
         
         writeLog("Output Lines", "");
-        startAddr = pcb.getLength()+pcb.getReaderIndex()+1;
+        startAddr = pcb.getLength()+pcb.getDataLines();
         endAddr = startAddr+pcb.getWriterIndex();
         try{
             for(int i=startAddr;i<endAddr;i++){
@@ -224,6 +277,7 @@ public class SystemEvent {
     }
     
     /**
+     * Fired on I/O request event
      * @param interrupt
      */
     public void onIORequested(InterruptException interrupt){
@@ -246,7 +300,7 @@ public class SystemEvent {
     }
     
     /**
-     * 
+     * Fired on context switch event
      */
     public void onContextSwitched(){
         if(!eventContextSwitch) return;
@@ -273,7 +327,7 @@ public class SystemEvent {
     }
     
     /**
-     * 
+     * Fired on memory allocation event in Loader
      * @param context
      */
     public void onMemoryAllocated(LoaderContext context){
@@ -301,6 +355,8 @@ public class SystemEvent {
     }
     
     /**
+     * Fired when Loader couldn't load the program due to some errors
+     * such as syntax error, invalid character, incorrect memory reserved size
      * @param loaderCntext
      * @param e
      */
@@ -325,6 +381,10 @@ public class SystemEvent {
         
     }
     
+    /**
+     * Fired on system shutdown event
+     * 
+     */
     public void onSystemShutdown(){
         
         writeLog("** [FINAL STATISTICS]");
@@ -347,14 +407,27 @@ public class SystemEvent {
                 divideSafely(totalFragmentation,successJobs));
     }
     
+    /**
+     * @param message message to be written to system log
+     */
     public void writeLog(String message){
         io.getLog().info(message);
     }
     
+    /**
+     * 
+     * @param jobID
+     * @param message
+     */
     public void writeLog(ID jobID, String message){
         io.getLog().info("[Job ID (hex): "+jobID+"] : "+message);
     }
     
+    /**
+     * 
+     * @param title
+     * @param value
+     */
     public void writeLog(String title, Object value){
         if(value instanceof Double){
             value = new DecimalFormat("###,##0.00")
@@ -375,12 +448,23 @@ public class SystemEvent {
         writeLog(title + " : " + value);
     }
     
+    /**
+     * 
+     * @param number
+     * @return
+     */
     public String toHexString(Number number){
         String value = new BigInteger(
                 number.toString(), 10).toString(16);
         return StringUtils.leftPad(value.toUpperCase(), 4, '0');
     }
     
+    /**
+     * 
+     * @param num1
+     * @param num2
+     * @return
+     */
     private double divideSafely(int num1, int num2){
         if(num2==0) return 0.0;
         return num1/num2;

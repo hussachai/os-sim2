@@ -1,21 +1,23 @@
 /*
  * Name: Hussachai Puripunpinyo
  * Course No.:  CS 5323
- * Assignment title: PHASE I (March 5)
+ * Assignment title: PHASE II (April 23)
  * TA's Name: 
  *  - Alireza Boloorchi
  *  - Sukanya Suwisuthikasem
  * Global variables:
+ *  - loader (the reference to Loader)
  *  - cpu (the reference to CPU)
  *  - memory (the reference to Memory)
- *  - loader (the reference to Loader)
- *  - io (the reference to InputOutput)
+ *  - scheduler (the reference to Scheduler)
+ *  - io (the reference to IOManager)
  *  - errorHandler (the reference to ErrorHandler)
+ *  - event (the reference to SystemEvent
  *  
  *  Brief Description:
  *  The System is the main entry of program and the container for every subroutines. 
- *  It wires everything together via itself because it exposes the components
- *  via the getter method and pass itself to some components that require.
+ *  It wires all components (devices) together via itself because it exposes the 
+ *  components via the getter method and pass itself to some components that require.
  *  
  *  Remark:
  *  I should not name this class as System because it will collide with 
@@ -157,15 +159,15 @@ public class TheSystem {
     public static void main(String[] args) {
         
         if(args.length==0){
-            System.out.println("java basic-os-sim2.jar filename [-Devent.$eventName] ...");
+            System.out.println("java basic-os-sim2.jar filename [-Devent.$eventName=[true|false]] ...");
             System.out.println("Available event environments");
-            System.out.println("-D"+Environment.EVENT_ALL);
-            System.out.println("-D"+Environment.EVENT_JOB_INIT);
-            System.out.println("-D"+Environment.EVENT_JOB_TERM);
-            System.out.println("-D"+Environment.EVENT_LOAD_FAIL);
-            System.out.println("-D"+Environment.EVENT_CTX_SWITCH);
-            System.out.println("-D"+Environment.EVENT_IO_REQ);
-            System.out.println("-D"+Environment.EVENT_MALLOC);
+            System.out.println("-D"+Environment.EVENT_JOB_INIT+"=true");
+            System.out.println("-D"+Environment.EVENT_JOB_TERM+"=true");
+            System.out.println("-D"+Environment.EVENT_LOAD_FAIL+"=true");
+            System.out.println("-D"+Environment.EVENT_CTX_SWITCH+"=false");
+            System.out.println("-D"+Environment.EVENT_IO_REQ+"=false");
+            System.out.println("-D"+Environment.EVENT_MALLOC+"=false");
+            System.out.println("-D"+Environment.EVENT_ALL+"=false");
             return;
         }
         TheSystem system = new TheSystem();

@@ -12,7 +12,7 @@ import org.junit.Ignore;
 public class Main {
     
     public static void main(String[] args) {
-        System.setProperty(Environment.EVENT_ALL, "true");
+        System.setProperty(Environment.EVENT_MALLOC, "true");
         args = new String[]{
 //                "programs/single/infinite-loop"
 //                "programs/single/_square"

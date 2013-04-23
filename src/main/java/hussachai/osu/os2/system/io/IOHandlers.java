@@ -11,16 +11,40 @@ import hussachai.osu.os2.system.unit.Word;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 
+/**
+ * I/O Handler is introduced in Phase II because Phase II is the extension
+ * of Phase I. So, I don't want to remove the standard I/O which is screen
+ * and keyboard that is required in Phase I but I want to add more 2 handlers
+ * into the system - in-memory input and in-memory output. 
+ * 
+ * @author hussachai
+ *
+ */
 public class IOHandlers {
     
+    /**
+     * Interface that all I/O input peripherals must implement
+     * @author hussachai
+     *
+     */
     public static interface Input {
         public Word read();
     }
     
+    /**
+     * Interface that all I/O output peripherals must implement
+     * @author hussachai
+     *
+     */
     public static interface Output {
         public void write(Word data);
     }
     
+    /**
+     * Standard input is key event from keyboard
+     * @author hussachai
+     *
+     */
     public static class StandardInputHandler implements Input {
         
         @Override
@@ -48,6 +72,13 @@ public class IOHandlers {
         }
     }
     
+    /**
+     * Standard output is screen. It will convert hexadecimal value
+     * to decimal automatically before displaying.
+     * 
+     * @author hussachai
+     *
+     */
     public static class StandardOutputHandler implements Output {
 
         @Override
@@ -69,6 +100,11 @@ public class IOHandlers {
         
     }
     
+    /**
+     * The base class for in-memory I/O
+     * @author hussachai
+     *
+     */
     public static abstract class MemoryHandler {
         
         private Memory memory;
@@ -103,6 +139,11 @@ public class IOHandlers {
         
     }
     
+    /**
+     * In-memory input handler
+     * @author hussachai
+     *
+     */
     public static class MemoryInputHandler extends MemoryHandler 
         implements Input {
         
@@ -115,6 +156,11 @@ public class IOHandlers {
         }
     }
     
+    /**
+     * In-memory output handler
+     * @author hussachai
+     *
+     */
     public static class MemoryOutputHandler extends MemoryHandler 
         implements Output {
         

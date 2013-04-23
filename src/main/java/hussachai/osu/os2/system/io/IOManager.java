@@ -34,6 +34,11 @@ public class IOManager {
         return log;
     }
     
+    /**
+     * 
+     * @param input if null, standard input will be used
+     * @return
+     */
     public Word read(IOHandlers.Input input){
         if(input==null){
             return stdInputHandler.read();
@@ -41,6 +46,11 @@ public class IOManager {
         return input.read();
     }
     
+    /**
+     * 
+     * @param output if null, standard output will be used
+     * @param data
+     */
     public void write(IOHandlers.Output output, Word data){
         if(output==null){
             stdOutputHandler.write(data);
@@ -49,6 +59,11 @@ public class IOManager {
         }
     }
     
+    /**
+     * I/O type enumeration
+     * @author hussachai
+     *
+     */
     public static enum IOType {
         Read, Write
     }

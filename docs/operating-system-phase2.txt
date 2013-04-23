@@ -1,4 +1,33 @@
 
+Software engineering issues
+=================================
+I decided to implement Bit unit as enum type because it can represent
+the actual bit better than other types. In addition, it's type-safe.
+For example, if I implemented the bit unit using char or int, I could
+assign any characters or any numbers to the bit variable. 
+The enum type is the singleton object that is created once its load
+at the first time. So, no matter what size of array of enum I created,
+the memory is still being used efficiently. I also added some convenient
+methods for converting back and forth between hex, decimal, and binary
+to the Bit enum class. Those methods are static which means it belongs
+to class not an instance. I use Bit class as a namespace for those conversion
+methods. Because memory must be accessed in the unit of word,
+I decieded to create the logical unit named Word to wrap the 12 bits inside
+and I use it to access memory data convieniently. 
+Word is a class not enum but it's a light-weight class.
+
+All OP-code operations are calculated in binary to represent the real system.
+The variables are carefully created, the system must represent the real system
+that has limited resources. For example, I used scratch-pad register (R6-R9)
+instead of creating the object from nowhere. Doing that makes the code longer
+but it can reflect the real system.
+
+This simulation program runs quite slow because all operations relating to 
+CPU calculation are implemented as simulated bitwise operation.
+And that is not the real bitwise operation that underlying machine does but 
+all bits are manipulated the same way as the system does with the actual bits
+in underlying machine.
+
 At first, I would design the system to allow Loader to correct the
 number of data lines in case the data being provided are more than
 the number specified in the load module format. But, the problem was
@@ -6,15 +35,10 @@ that Loader need to postpone memory allocation to the end of Load module
 because it will not know the number of data until it already read all data.
 This requires system to have buffer at least 128 words (equal to the largest 
 partition of memory).  But, it doesn't make sense to have that much buffer
-just to be able to fix one problem of incorrect number of data.
- After carefully thought, I decided to treat "EXTRA DATA UNUSED" incident as error. 
-Then, I can design the buffer to be 8 words which reflect to the real system.
-
-This simulation program runs quite slow because all operations relating to 
-CPU calculation are implemented as simulated bitwise operation.
-And that is not the real bitwise operation that underlying machine does but 
-So, all bits are manipulated the same way as the system does with the actual bits
-in underlying machine.   
+just to be able to fix one problem such as incorrect number of data.
+After carefully thought, I decided to treat "EXTRA DATA UNUSED" incident as error
+Then, I can design the buffer to have 8 words size which reflects to 
+the real system rather than big buffer. 
 
 Note that: This system uses Word (12 bits) as the basic addressing unit.
 The left most significant bit is the sign bit for 2's complement computation.
@@ -24,8 +48,8 @@ number. In the other hand, if the program wants to add 1 to 2,047, it will
 become -2,048. The reason why the system doesn't validate the maximum bound
 and report the error is because that's not the responsibility of the system
 but the program. Doing validation requires more CPU cycles and it will slow 
-down all arithmetic operation without necessary. Not even system, most programming
-languages don't implement validation as well. The program is responsible for
+down all arithmetic operation without necessary. Most programming languages 
+also don't implement validation as well. The user program is responsible for
 validation not a system nor programming language. 
 
 I tried to keep the amount of local variables as minimum as possible and that
@@ -34,6 +58,8 @@ as much as possible.  Notice that the CPU uses general purpose registers that
 is represented as array of logical unit Word (array of Bit) instead of local variable
 to hold arbitrary data.
 
+Issues on Loader
+-----------------
 In phase 2 that introduces multiprogramming to the system. The format of loader
 is changed from all hex digits to hex digits including some semantics tokens 
 such as ** JOB. 
@@ -43,11 +69,14 @@ must be together to form the group of related hex digits. So, the Loader can
 handle even the digits are separated by new line, or carriage return character.
 I couldn't take that approach in Phase 2 because I don't want to make the program
 more complicated than necessary. So, the new constraint for loader format is that
-the related hex digits must be together. They cannot be separated.
+the related hex digits must be together. They cannot be separated. And the job
+in the same batch file must be delimited by the blank line. 
 In phase 2, Loader also can communicate with Scheduler in addition to Memory. 
 Loader can now inquiry and allocate memory space by best fit policy and signal
 Scheduler to initiate the new Job if memory allocation is success.   
 
+Issues on I/O
+-----------------
 There are 2 ways to implement I/O action. I/O is the simulate I/O, so it performs
 an action when the I/O elapse time is 10 as specified in specification but it doesn't
 really consume 10 CPU clocks. I can spawn new thread for doing I/O and let it takes
@@ -55,23 +84,29 @@ really consume 10 CPU clocks. I can spawn new thread for doing I/O and let it ta
 must be synchronized with the CPU clock. That will create another problem and 
 this system is not multiprocessing but multiprogramming. Using thread in this system 
 would be the wrong decision.  Back to the I/O problem, what is the right time to 
-perform I/O. Before or after the I/O elapse time. If the I/O does perform immediately 
+perform I/O? Before or after the I/O elapse time? If the I/O does perform immediately 
 after the WR or RD instruction, it will be very easy to implement but it doesn't reflect
 the real multiprogramming system. I decided to implement the hard way in order to archive
 the goal that is to reflect the real system as much as possible. That decision made
 me spent 1 more day to debug the program. All the program logic works correctly but 
 the results were incorrect because multiprogramming. I/O tried to write back the value
-to the CPU register during the time of other job was executing. I solved this problem using
-one variable to hold the data in PCB until it acquires CPU time.
+to the CPU register during the time of other job was executing. 
+I solved this problem using one variable to hold the data in PCB until it acquires CPU time.
+When the PCB is active, the Scheduler will check whether it has pending data to write back
+to memory or not. If it has, the system will do it.
 The I/O system can handle both standard input/output which is keyboard and screen respectively
 because it's the continuous work from Phase 1 but in Phase 2, the in memory is used instead.
 However, the system can fall back to the standard I/O if the in memory I/O is not declared. 
 
-The memory section and CPU are the easiest parts to change because they still use the old address
-reference that is now treated as virtual address, the virtual address will be calculated to
-physical address by memory manager.
+Issues on Memory
+-----------------
+The memory section and CPU are the easiest parts to change because they still use the old 
+address reference. For the memory, the address is now treated as virtual address, the virtual 
+address will be translated to physical address by memory manager. The memory manager
+can access the active PCB to get the memory partition of the job in order use base address
+to translate address and bound address to check the correctness of program address referencing. 
 
- 
+
 I put the auxiliary classes in the same file as main class file to save the paper 
 when they're printed out by typescript utility. And I also changed the indentation
 character from TAB to SPACE to make it pretty in UNIX system. Windows uses 4 spaces
@@ -82,8 +117,71 @@ for aligning variables. No right or wrong and I pick no side.
 
 
 
+General approach to the problem
+=================================
+I changed and test incrementally. I still used the test cases that
+I did in Phase I to make sure that nothing is broken because of changes.
+I used version control extensively because I used it to go back to the 
+previous working version when I messed up the code.
 
 
+List of the utilities being used
+=================================
+- Debugger: Java debugger (jdb)
+- Integrated build tool: Apache Maven
+- Version control system: Git 
+- 3rd party libraries: Apache commons-lang3
+- Test tool:  JUnit 
 
-   
+Bulk complexities of simulation program
+=================================
+Java    
+Number of files:    19
+Number of classes:  19
+Number of enum types:   3
+Number of methods:  79
+Number of decisions:    158 (If-clauses and the number of cases)
+Line of code
+    Blank       316
+    Comment     639
+    Code        1,255
+    Total Lines 2,210
+
+Approximate break-down of the time spent in the design, 
+coding, and testing
+=================================
+Task                Time spent
+----------------------------------------
+Conceptualization           1 day
+Requirements analysis       1 day
+Detailed specification of 
+software requirements       2 days
+Design  Software Design     1 day
+Implementation Programming  2 days
+Testing and bug fixing      2 days
+Deployment                  1 hour
+----------------------------------------
+Total                       9 days (approx.)
+
+Simulation portability
+=================================
+This simulation was developed using Java language. Java program is platform 
+independent because it needs java runtime to execute java byte code. Java runtime 
+can be installed in many systems including Windows x64/x86, Solaris SPARC x64/x86, 
+Mac OS X x64, Linux x64/x86. Other platforms can use java runtime from open source 
+project named OpenJDK which developer can build java runtime from source. 
+However, there are some issues that can break portability such as new line character 
+and path delimiter which are platform specific variable. I solve this problem by 
+using the Java system properties to obtain those values instead of hard coding. 
+The byte code doesn’t have to be recompiled when it’s moved from one platform to another. 
+The utilities being used in this project are also portable. Most of them are written 
+in Java except Git which is written in C but it has the version for Unix-liked system 
+and Windows.
+
+Implementation language
+=================================
+I chose Java because it’s static type language, platform independent, and it 
+also has a lot of free enterprise graded tools. For statically typed language,
+the IDE can support full refactoring that is a very convenient feature. 
+IDE of my choice is Eclipse IDE Juno 3.8 .
 

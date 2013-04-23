@@ -1,3 +1,27 @@
+/*
+ * Name: Hussachai Puripunpinyo
+ * Course No.:  CS 5323
+ * Assignment title: PHASE II (April 23)
+ * TA's Name: 
+ *  - Alireza Boloorchi
+ *  - Sukanya Suwisuthikasem
+ * Global variables:
+ *  - running (The PCB of job being executed in CPU)
+ *  - readyQueue (The ready queue ordering by remaining quantum desc) 
+ *  - blockedQueue (The blocked queue ordering by remaining I/O time asc)
+ *  - cpu (The reference to CPU)
+ *  - memory (The reference to Memory)
+ *  - io (The reference to IOManager)
+ *  - event (The reference to SystemEvent)
+ *  - errorHandler (The reference to ErrorHandler)
+ *  
+ *  Brief Description:
+ *  Scheduler is responsible for dispatching job, maintaining ready/block queue.
+ *  It's also responsible for PCB initiation and termination. Whenever the PCB is 
+ *  created by Scheduler, it will assign the incremented job ID to the new job 
+ *  including other attributes such as PC, IR, base and bound, time enter.
+ *  
+ */
 package hussachai.osu.os2.system.scheduler;
 
 import hussachai.osu.os2.system.SystemEvent;
@@ -21,10 +45,7 @@ import java.util.PriorityQueue;
 
 
 /**
- * Scheduler is responsible for dispatching job, maintaining ready/block queue.
- * It's also responsible for PCB initiation and termination. Whenever the PCB is 
- * created by Scheduler, it will assign the incremented job ID to the new job 
- * including other attributes such as PC, IR, base and bound, time enter.
+ * Scheduler
  * 
  * @author hussachai
  *
@@ -45,9 +66,7 @@ public class Scheduler {
     
     /**
      * The ready queue is used for queuing the processes waiting for
-     * CPU time. The LinkedList implements both Deque and List interface,
-     * that allow the Scheduler to use it as queue or organize the order
-     * of queue by random access interface being provided by List.
+     * CPU time.
      * The position of PCB is based on the value of remainder of quantum
      * if it does apply. For the 0 remainder of quantum job will be inserted
      * to the end of the queue (number 7th) 

@@ -25,14 +25,25 @@ public class SystemLog {
     /** platform independent new line characters */
     private String newLine = System.getProperty("line.separator");
     
+    /**
+     * Empty the system log
+     */
     public void clearInfo(){
         write(SYSTEM_LOG, null, false);
     }
     
+    /**
+     * 
+     * @param data
+     */
     public void info(String data){
         write(SYSTEM_LOG, data, true);
     }
     
+    /**
+     * Empty the trace file
+     * @param jobID
+     */
     public void clearTrace(ID jobID){
         if(jobID==null) return;
         String fileName = MessageFormat.format(
@@ -40,6 +51,12 @@ public class SystemLog {
         write(fileName, null, false);
     }
     
+    /**
+     * Trace file will be created for each jobID and jobID
+     * will be the part of file name
+     * @param jobID if this value is null, trace will not be output
+     * @param data
+     */
     public void trace(ID jobID, String data){
         if(jobID==null) return;
         String fileName = MessageFormat.format(
@@ -47,6 +64,12 @@ public class SystemLog {
         write(fileName, data, true);
     }
     
+    /**
+     * 
+     * @param fileName
+     * @param data
+     * @param append
+     */
     private void write(String fileName, String data, boolean append){
         FileWriter writer = null;
         try{
@@ -68,3 +91,4 @@ public class SystemLog {
         }
     }
 }
+

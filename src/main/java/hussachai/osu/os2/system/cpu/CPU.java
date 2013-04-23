@@ -1,7 +1,7 @@
 /*
  * Name: Hussachai Puripunpinyo
  * Course No.:  CS 5323
- * Assignment title: PHASE I (March 5)
+ * Assignment title: PHASE II (April 23)
  * TA's Name: 
  *  - Alireza Boloorchi
  *  - Sukanya Suwisuthikasem
@@ -20,7 +20,7 @@
  *  - io (The reference to InputOutput)
  *   
  *  Brief Description:
- *  CPU is the central processing unit which contains 2 subunit - Control unit
+ *  CPU is the central processing unit which contains 2 subunits - Control unit
  *  and Arithmetic & Logic Unit (ALU). The control unit will handle fetching and
  *  decoding of the instruction respectively. The ALU will handle the execution
  *  of instruction.

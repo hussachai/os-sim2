@@ -1,3 +1,36 @@
+/*
+ * Name: Hussachai Puripunpinyo
+ * Course No.:  CS 5323
+ * Assignment title: PHASE II (April 23)
+ * TA's Name: 
+ *  - Alireza Boloorchi
+ *  - Sukanya Suwisuthikasem
+ * Global variables:
+ *  - jobIDGenerator (The word-size job ID generator)
+ *  - buffer (The small memory to hold the data for improving performance) 
+ *  - memory (The reference to Memory)
+ *  - event (The reference to SystemEvent)
+ *  - lastFilePointer (The variable that is used for memorizing the last pointer in file)
+ *  Brief Description:
+ *  The Loader is responsible for loading new job from batch file. When the job is loaded
+ *  successfully, the Loader will call Memory method to allocate the memory for that job.
+ *  If the memory allocation is failed, the Loader will skip all operations and return 
+ *  the control back to System then Scheduler will continue. 
+ *  Sometimes, Loader detects the error after it has already done the memory allocation,
+ *  it will deallocate memory and report the error to SystemEvent and the error will be
+ *  propagated to the System then the Error Handler will take control after that. 
+ *  Loader also performs the validation on syntax and data. 
+ *  
+ *  Remark:
+ *  The loader() cannot have starting address and trace-switch as its arguments
+ *  which is different from specification. The reason that it takes file argument
+ *  instead of starting address and trace-switch is because the load is responsible
+ *  for parsing the user program file that has starting address and trace-switch data
+ *  encoded into the same source file as program. The System cannot invoke Loader and
+ *  passing those required arguments because it cannot know those values before Loader
+ *  has finished parsing the whole program.  
+ *  
+ */
 package hussachai.osu.os2.system.loader;
 import hussachai.osu.os2.system.SystemEvent;
 import hussachai.osu.os2.system.TheSystem;
@@ -15,7 +48,7 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 
 /**
- * 
+ * Loader
  * @author hussachai
  *
  */
@@ -39,6 +72,7 @@ public class Loader {
     }
     
     /**
+     * [Specification required method]
      * 
      * @param file
      * @return context if the job is already transfered to memory 
