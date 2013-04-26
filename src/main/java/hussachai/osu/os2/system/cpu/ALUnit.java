@@ -68,8 +68,7 @@ public class ALUnit {
             }else{
                 if(bitX==Bit.I){
                     /* indexing addressing */
-                    memory.memory(Signal.READ, r4, tmp2);
-                    Bit.add(a.getBits(), tmp2.getBits(), false);
+                    Bit.add(a.getBits(), r4.getBits(), false);
                     Word.copy(a, cpu.mar);
                 }else{
                     /* direct addressing */
